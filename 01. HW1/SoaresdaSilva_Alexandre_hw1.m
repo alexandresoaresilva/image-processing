@@ -29,7 +29,6 @@ I_blur_rem = conv2(I_rem,int_filter_3x3,'same');
 I_blur_rem = conv2(I_blur_rem ,int_filter_5x5,'same');
 I_blur_rem = conv2(I_blur_rem ,int_filter_3x3,'same');
 I_blur_rem = uint8(I_blur_rem);
-
 %% 1st derivative
 % x_1st_deriv = [0 1 0; 1 -4 1; 0 1 0];
 % y_1st_deriv = [-1 0 1; -2 0 2; -1 0 1];
@@ -57,13 +56,12 @@ x_max = max(indeces(:,2));
 
 ROI_x = linspace(x_min-5,x_min+5,7);
 ROI_y = linspace(y_min-5,y_max+5,7);
-
 %% display figs
 figure
 imshow([I_original, I_blur, I_bin,I_rem, I_sec_deriv]);
 title('1. original VS 2. blur 5x5 VS 3. binarized VS 4. spades/no removed from binarized VS 5. sec derivative with contrast enhancement');
-
 rotate_img(I_rem,I_original);
+
 
 function I_rem = remove_spades_numbers(I)
     [m,n] = size(I);

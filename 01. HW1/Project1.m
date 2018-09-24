@@ -11,7 +11,7 @@ imshow(image);
 %% Binarize the Image
 binaryThreshold = 150;
 binImage =  binarizeImage(binaryThreshold, image);
-
+imshow(binImage)
 % figure
 % imshow(imageOrg);
 
@@ -39,11 +39,11 @@ corner3 = [minX,cornerX(1)];
 [cornerX, cornerY] = find(binImage(:,maxX) == 255);
 corner4 = [maxX,cornerX(1)];
 
-hold on
-text(corner1(1),corner1(2), '1', 'FontSize', 30, 'Color', 'red');
-text(corner2(1),corner2(2), '2', 'FontSize', 30, 'Color', 'red');
-text(corner3(1),corner3(2), '3', 'FontSize', 30, 'Color', 'red');
-text(corner4(1),corner4(2), '4', 'FontSize', 30, 'Color', 'red');
+%hold on
+% text(corner1(1),corner1(2), '1', 'FontSize', 30, 'Color', 'red');
+% text(corner2(1),corner2(2), '2', 'FontSize', 30, 'Color', 'red');
+% text(corner3(1),corner3(2), '3', 'FontSize', 30, 'Color', 'red');
+% text(corner4(1),corner4(2), '4', 'FontSize', 30, 'Color', 'red');
 % plot(corner1(1),corner1(2),'rx', 'MarkerSize', 20);
 % plot(corner2(1),corner2(2),'gx', 'MarkerSize', 20);
 % plot(corner3(1),corner3(2),'go', 'MarkerSize', 20);
@@ -56,7 +56,6 @@ if(abs(corner4(1)-corner2(1))<thresholdDistanceX)
 else
     %% Rotate Image
     % angle = atand(abs(corner4(2)-corner2(2))/(corner4(1)-corner2(1)));
-    
     distanceThreshold = 220; % Threshold distance between two adjacent sides
     if(abs(corner4(1)-corner2(1)) < distanceThreshold)
         angle2 = rad2deg(atan2((corner3(2)-corner2(2)),(corner3(1)-corner2(1))));
@@ -112,6 +111,9 @@ end
 
 imageCropped = imro(blackRowsXtop:size(binImage2,1)-blackRowsXbottom,blackRowsYleft:size(binImage2,2)-blackRowsYright);
 subplot(122);
+
+
+
 % imshow(imageCropped);
 
 %% Check if the picture is upside down
@@ -121,8 +123,22 @@ black_total_bottom_half =length(find(imageCropped(ceil(end/2):end,:) < 100));
 if black_total_bottom_half > black_total_top_half
     imageCropped = imrotate(imageCropped,180,'crop');
 end
+filter_int=@(n)1/(n^2)*ones(n);
+imageCropped2 = imageCropped;
+imageCropped2 = binarizeImage(100, imageCropped2);
+int_filter_9x9 = filter_int(21);
+% imageCropped2 = conv2(imageCropped2,int_filter_9x9,'same');
+% imageCropped2 = conv2(imageCropped2,int_filter_9x9,'same');
+imageCropped2(1:end,1:end)=255;
 
-imshow(imageCropped);
+binImageCropped =  binarizeImage(100, imageCropped);
+
+[y,x] = find(binImageCropped == 0);
+p = [y x];
+
+a = size(binImageCropped);
+
+
 %% Create new Images
 % imwrite(imro,'Testimage4.tif');
 
