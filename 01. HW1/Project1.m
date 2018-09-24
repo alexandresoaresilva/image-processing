@@ -1,7 +1,8 @@
 clc; clear;
 
 %% Read the image
-image = imread('Testimage3.tif');
+imageName = input('Enter the image name: ', 's');
+image = imread(imageName);
 imageOrg = image; % Copy of orignal Image
 imro = image;
 subplot(121)
@@ -38,7 +39,11 @@ corner3 = [minX,cornerX(1)];
 [cornerX, cornerY] = find(binImage(:,maxX) == 255);
 corner4 = [maxX,cornerX(1)];
 
-% hold on
+hold on
+text(corner1(1),corner1(2), '1', 'FontSize', 30, 'Color', 'red');
+text(corner2(1),corner2(2), '2', 'FontSize', 30, 'Color', 'red');
+text(corner3(1),corner3(2), '3', 'FontSize', 30, 'Color', 'red');
+text(corner4(1),corner4(2), '4', 'FontSize', 30, 'Color', 'red');
 % plot(corner1(1),corner1(2),'rx', 'MarkerSize', 20);
 % plot(corner2(1),corner2(2),'gx', 'MarkerSize', 20);
 % plot(corner3(1),corner3(2),'go', 'MarkerSize', 20);
@@ -51,13 +56,16 @@ if(abs(corner4(1)-corner2(1))<thresholdDistanceX)
 else
     %% Rotate Image
     % angle = atand(abs(corner4(2)-corner2(2))/(corner4(1)-corner2(1)));
-    angle2 = rad2deg(atan2((corner4(2)-corner2(2)),(corner4(1)-corner2(1))));
+    
     distanceThreshold = 220; % Threshold distance between two adjacent sides
     if(abs(corner4(1)-corner2(1)) < distanceThreshold)
-        imro = imrotate(imageOrg,angle2);
+        angle2 = rad2deg(atan2((corner3(2)-corner2(2)),(corner3(1)-corner2(1))));
+%         imro = imrotate(imageOrg,90+angle2,'crop');
     else
-        imro = imrotate(imageOrg,90+angle2,'crop');
+        angle2 = rad2deg(atan2((corner4(2)-corner2(2)),(corner4(1)-corner2(1))));
+        
     end
+    imro = imrotate(imageOrg,90+angle2,'crop');
 end
 
 %% Show Rotated image
@@ -102,10 +110,19 @@ for i=blackRowsYleft:size(binImage2,2)
     end
 end
 
-imageCropped = imro(blackRowsXtop-1:size(binImage2,1)-blackRowsXbottom+1,blackRowsYleft-1:size(binImage2,2)-blackRowsYright+1);
+imageCropped = imro(blackRowsXtop:size(binImage2,1)-blackRowsXbottom,blackRowsYleft:size(binImage2,2)-blackRowsYright);
 subplot(122);
-imshow(imageCropped);
+% imshow(imageCropped);
 
+%% Check if the picture is upside down
+black_total_top_half =length(find(imageCropped(1:round(end/2),:) < 100));
+black_total_bottom_half =length(find(imageCropped(ceil(end/2):end,:) < 100));
+
+if black_total_bottom_half > black_total_top_half
+    imageCropped = imrotate(imageCropped,180,'crop');
+end
+
+imshow(imageCropped);
 %% Create new Images
 % imwrite(imro,'Testimage4.tif');
 
