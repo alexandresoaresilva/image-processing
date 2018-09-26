@@ -67,10 +67,6 @@ else
     imro = imrotate(imageOrg,90+angle2,'crop');
 end
 
-%% Show Rotated image
-% figure
-% imshow(imro);
-
 
 %% Binarize rotated image
 binImage2 =  binarizeImage(binaryThreshold, imro);
@@ -109,12 +105,13 @@ for i=blackRowsYleft:size(binImage2,2)
     end
 end
 
-imageCropped = imro(blackRowsXtop:size(binImage2,1)-blackRowsXbottom,blackRowsYleft:size(binImage2,2)-blackRowsYright);
+imageCropped = imro(blackRowsXtop:size(binImage2,1)-blackRowsXbottom,...
+    blackRowsYleft:size(binImage2,2)-blackRowsYright);
 subplot(122);
 
 
 
-% imshow(imageCropped);
+imshow(imageCropped);
 
 %% Check if the picture is upside down
 black_total_top_half =length(find(imageCropped(1:round(end/2),:) < 100));
@@ -123,20 +120,17 @@ black_total_bottom_half =length(find(imageCropped(ceil(end/2):end,:) < 100));
 if black_total_bottom_half > black_total_top_half
     imageCropped = imrotate(imageCropped,180,'crop');
 end
-filter_int=@(n)1/(n^2)*ones(n);
-imageCropped2 = imageCropped;
-imageCropped2 = binarizeImage(100, imageCropped2);
-int_filter_9x9 = filter_int(21);
-% imageCropped2 = conv2(imageCropped2,int_filter_9x9,'same');
-% imageCropped2 = conv2(imageCropped2,int_filter_9x9,'same');
-imageCropped2(1:end,1:end)=255;
 
-binImageCropped =  binarizeImage(100, imageCropped);
-
-[y,x] = find(binImageCropped == 0);
-p = [y x];
-
-a = size(binImageCropped);
+% filter_int=@(n)1/(n^2)*ones(n);
+% imageCropped2 = imageCropped;
+% imageCropped2 = binarizeImage(100, imageCropped2);
+% imageCropped2(1:end,1:end)=255;
+% binImageCropped =  binarizeImage(100, imageCropped);
+% 
+% [y,x] = find(binImageCropped == 0);
+% p = [y x];
+% 
+% a = size(binImageCropped);
 
 
 %% Create new Images

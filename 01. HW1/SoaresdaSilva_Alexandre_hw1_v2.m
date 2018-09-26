@@ -3,7 +3,7 @@ close all
 clc, clear;
 filter_int=@(n)1/(n^2)*ones(n);
 L = 256;
-I_original = imread('Testimage3.tif');
+I_original = imread('Testimage4.tif');
 %mistake; this is not the average
 %int_filter = 1/9*[1 1 1 1 1 ; 1 1 1 1 1 ; 1 1 1 1 1];
 %% integration - blur
@@ -17,47 +17,18 @@ I_blur = conv2(I_original,int_filter_5x5,'same');
 I_blur = uint8(I_blur);
 %% correcting negatives
 I_blur = correct_negatives(I_blur);
-I_bin = I_blur;
-% I_bin(I_bin<75)=0; %threshold to practially binarize the img
-% I_bin(I_bin>=75)=255; %threshold to practially binarize the img
-I_bin(I_bin < 125)=0; %threshold to practially binarize the img
-I_bin(I_bin >= 125)=255; %threshold to practially binarize the img
-%% remove spades / nums
-I_rem = remove_spades_numbers(I_bin);
-%% integration - blur
-% I_blur_rem = conv2(I_rem,int_filter_3x3,'same');
-% I_blur_rem = conv2(I_blur_rem ,int_filter_5x5,'same');
-% I_blur_rem = conv2(I_blur_rem ,int_filter_3x3,'same');
-% I_blur_rem = uint8(I_blur_rem);
-%% 1st derivative
-% x_1st_deriv = [0 1 0; 1 -4 1; 0 1 0];
-% y_1st_deriv = [-1 0 1; -2 0 2; -1 0 1];
-% x_1st_deriv = [1 1; -1 -1];
-% y_1st_deriv = [1 -1; 1 -1];
-% I_1s_tder_x = conv2(I_blur_rem, x_1st_deriv ,'same');
-% I_1s_tder_y = conv2(I_blur_rem, y_1st_deriv ,'same');
-% 
-% x_1st_deriv = binarize_img(x_1st_deriv,200);
-% y_1st_deriv = binarize_img(y_1st_deriv,200);
-%% 2nd derivative
-% sec_deriv = [0 1 0; 1 -4 1; 0 1 0];
-% I_sec_deriv = conv2(I_blur_rem, sec_deriv,'same');
-% I_sec_deriv = correct_negatives(I_sec_deriv) %corrects negative pixels
-%I_sec_deriv = binarize_img(I_sec_deriv,200)
+I_bin = binarize_img(I_blur,125);
+%% remove spades / nums and rotate
 
-%figure
-%imshow([I_1s_tder_x, I_1s_tder_y, I_sec_deriv]);
-% [row, column] = find(I_sec_deriv > 100);
-% indeces = [row, column];
-% y_min = min(indeces(:,1));
-% y_max = max(indeces(:,1));
-% x_min = min(indeces(:,2));
-% x_max = max(indeces(:,2));
-% 
-% ROI_x = linspace(x_min-5,x_min+5,7);
-% ROI_y = linspace(y_min-5,y_max+5,7);
+I_bin_no_spades = remove_spades_numbers(I_bin);
+
+figure
+imshow([I_original, I_bin, I_bin_no_spades]);
+[I_rotat, I_rotated_bin] = rotate_img(I_bin_no_spades,I_original);
+I_cropped = crop_img(I_rotated_bin, I_rotat);
+I = check_if_upside_down(I_cropped);
 %% display figs
-I_rotat = rotate_img(I_rem,I_original);
+
 figure
 %title('1. original VS 2. blur 5x5 VS 3. binarized VS 4. spades/no removed from binarized VS 5. sec derivative with contrast enhancement');
 hold on
@@ -65,11 +36,13 @@ hold on
 subplot(221);
 imshow([I_original, I_blur]);
 subplot(222);
-imshow([I_bin,I_rem]);
+imshow([I_bin, I_bin_no_spades]);
 subplot(223);
-imshow(I_rotat);
-
-
+imshow([I_rotat, I_rotated_bin]);
+subplot(223);
+imshow([I_rotat, I_rotated_bin]);
+subplot(224);
+imshow([I]);
 function I_rem = remove_spades_numbers(I)
     [m,n] = size(I);
     counter_black = 0;
@@ -163,7 +136,7 @@ function I = binarize_img(I,threshold)
     I(I >= threshold) = 255;
 end
 
-function I_rotated = rotate_img(I_bin_rem,I_original)
+function [I_rotated, I_rotated_bin] = rotate_img(I_bin_rem,I_original)
     % Extract the Corner Indices
 %% Extract the Corners
     [row,col] = find(I_bin_rem > 200);
@@ -190,21 +163,92 @@ function I_rotated = rotate_img(I_bin_rem,I_original)
     corner4 = [maxX,cornerX(1)];
 
     thresholdDistanceX = 100;
-    if(abs(corner4(1)-corner2(1))<thresholdDistanceX)
-
-    else
+    
+    corners = [corner1; corner2; corner3; corner4];
+    [~, x_min] = min(corners(:,1)); %lefmost corner x
+    
+    
+    dist = zeros(4,1);
+    for i=1:4
+        dist(i) = vecnorm(corners(x_min,:) - corners(i,:),2,2);
+    end
+    
+    [~,index_max]=max(dist);
+    dist(index_max) = 0;
+    [~,index_max]=max(dist);
+    dist(index_max) = 0;
+    [max_dist,index_max]=max(dist);
+    
+    
+    %[~,index_min]=min(dist);
+    %smallest side
+    x = corners(index_max,1) - corners(x_min,1);
+    y = corners(index_max,2) - corners(x_min,2);
+    
+    figure
+    imshow(I_original);
+    hold on
+    text(corners(index_max,1),corners(index_max,2), num2str(index_max), 'FontSize', 30, 'Color', 'red');
+    text(corners(x_min,1),corners(x_min,2), num2str(x_min), 'FontSize', 30, 'Color', 'blue');
+    
+    angle = rad2deg(atan2(y,x));
+%     if angle < -120 || angle > 120
+%         angle = angle  + 90;
+%     end
+    %imshow(imrotate(I_original,angle,'crop'))
         %% Rotate Image
-        distanceThreshold = 220; % Threshold distance between two adjacent sides
-        
-        if(abs(corner4(1)-corner2(1)) < distanceThreshold)
-            y = corner3(2)-corner2(2);
-            x = corner3(1)-corner2(1);
+
+    if (angle > 173 && angle < 183) || (angle > -5 && angle < 5)
+        I_rotated = I_original;
+        I_rotated_bin = I_bin_rem;
+    else
+        I_rotated = imrotate(I_original,angle,'crop');
+        I_rotated_bin = imrotate(I_bin_rem,angle,'crop');
+    end
+end
+
+function I_cropped = crop_img(I_bin_rotated, I_original_rotated)
+    blackRowsXtop = 0;
+    blackRowsXbottom = 0;
+    blackRowsYleft = 0;
+    blackRowsYright = 0;
+
+    for i=1:size(I_bin_rotated,1)
+        if sum(I_bin_rotated(i,:) == 255) > 0
+            break
         else
-            y = corner4(2)-corner2(2);
-            x = corner4(1)-corner2(1);
+            blackRowsXtop = blackRowsXtop+1;
         end
-        
-        angle2 = rad2deg(atan2(y,x));
-        I_rotated = imrotate(I_original,90+angle2,'crop');
+    end
+    for i=blackRowsXtop:size(I_bin_rotated,1)
+        if sum(I_bin_rotated(i,:) == 255) == 0
+            blackRowsXbottom = blackRowsXbottom+1;
+        end
+    end
+
+    for i=1:size(I_bin_rotated,2)
+        if sum(I_bin_rotated(:,i) == 255) > 0
+            break
+        else
+            blackRowsYleft = blackRowsYleft+1;
+        end
+    end
+    for i=blackRowsYleft:size(I_bin_rotated,2)
+        if sum(I_bin_rotated(:,i) == 255) == 0
+            blackRowsYright = blackRowsYright+1;
+        end
+    end
+
+    I_cropped = I_original_rotated(blackRowsXtop:size(I_bin_rotated,1)-blackRowsXbottom,...
+        blackRowsYleft:size(I_bin_rotated,2)-blackRowsYright);
+end
+
+function I = check_if_upside_down(I)
+    %% Check if the picture is upside down
+    black_total_top_half =length(find(I(1:round(end/2),:) < 100));
+    black_total_bottom_half =length(find(I(ceil(end/2):end,:) < 100));
+
+    if black_total_bottom_half > black_total_top_half
+        I = imrotate(I,180,'crop');
     end
 end
