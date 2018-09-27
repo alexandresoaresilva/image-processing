@@ -1,48 +1,41 @@
-%contrast enhancement
+%written by: Alexandre Soares & Mohak Kant
+%Sep 27, 2018
+
 close all
 clc, clear;
 filter_int=@(n)1/(n^2)*ones(n);
 L = 256;
-I_original = imread('Testimage4.tif');
-%mistake; this is not the average
-%int_filter = 1/9*[1 1 1 1 1 ; 1 1 1 1 1 ; 1 1 1 1 1];
+I_original = imread('Testimage2.tif');
 %% integration - blur
-%int_filter_5x5 = 1/(5^2)*ones(5);
-int_filter_3x3 = filter_int(3);
-int_filter_5x5 = filter_int(5);
-int_filter_7x7 = filter_int(7);
-int_filter_9x9 = filter_int(9);
-
-I_blur = conv2(I_original,int_filter_5x5,'same');
+I_blur = conv2(I_original,filter_int(5),'same');
 I_blur = uint8(I_blur);
 %% correcting negatives
-I_blur = correct_negatives(I_blur);
+I_blur = correct_negatives(I_blur); %just if there are negatives
 I_bin = binarize_img(I_blur,125);
 %% remove spades / nums and rotate
-
 I_bin_no_spades = remove_spades_numbers(I_bin);
-
-figure
-imshow([I_original, I_bin, I_bin_no_spades]);
 [I_rotat, I_rotated_bin] = rotate_img(I_bin_no_spades,I_original);
 I_cropped = crop_img(I_rotated_bin, I_rotat);
 I = check_if_upside_down(I_cropped);
 %% display figs
-
 figure
-%title('1. original VS 2. blur 5x5 VS 3. binarized VS 4. spades/no removed from binarized VS 5. sec derivative with contrast enhancement');
 hold on
-%imshow([I_original, I_blur, I_bin,I_rem, I_sec_deriv,I_rotat]);
 subplot(221);
 imshow([I_original, I_blur]);
+title('Original vs 5x5 blur (int)');
 subplot(222);
 imshow([I_bin, I_bin_no_spades]);
+title('Bin-blur vs Bin-blur-elements-removed');
 subplot(223);
 imshow([I_rotat, I_rotated_bin]);
-subplot(223);
-imshow([I_rotat, I_rotated_bin]);
+title('I rotated vs I rot bin');
 subplot(224);
-imshow([I]);
+imshow(I);
+title('Original rotated + cropped');
+pres_fig = gcf;
+pres_fig.Units = 'normalized';
+pres_fig.Position = [0 0 1 1];
+
 function I_rem = remove_spades_numbers(I)
     [m,n] = size(I);
     counter_black = 0;
@@ -74,7 +67,7 @@ function I_rem = remove_spades_numbers(I)
         end
         
     end
-    
+
     % gets rid of remaining white noise
     for i=2:total_pixels
         if I(i-1) >= 100 && I(i) < 100
@@ -172,16 +165,16 @@ function [I_rotated, I_rotated_bin] = rotate_img(I_bin_rem,I_original)
     for i=1:4
         dist(i) = vecnorm(corners(x_min,:) - corners(i,:),2,2);
     end
-    
+    %gets rid of largest distances
     [~,index_max]=max(dist);
     dist(index_max) = 0;
     [~,index_max]=max(dist);
     dist(index_max) = 0;
-    [max_dist,index_max]=max(dist);
+    %finds the smallest distance greater than zero(there's always a
+    %distance which equals zero, corner - (same corner)
+    [max_dist,index_max] = max(dist);
     
-    
-    %[~,index_min]=min(dist);
-    %smallest side
+   %shortest side
     x = corners(index_max,1) - corners(x_min,1);
     y = corners(index_max,2) - corners(x_min,2);
     
@@ -192,13 +185,9 @@ function [I_rotated, I_rotated_bin] = rotate_img(I_bin_rem,I_original)
     text(corners(x_min,1),corners(x_min,2), num2str(x_min), 'FontSize', 30, 'Color', 'blue');
     
     angle = rad2deg(atan2(y,x));
-%     if angle < -120 || angle > 120
-%         angle = angle  + 90;
-%     end
-    %imshow(imrotate(I_original,angle,'crop'))
-        %% Rotate Image
-
-    if (angle > 173 && angle < 183) || (angle > -5 && angle < 5)
+    %% Rotate Image
+     % too close for rotation; distorts more slightly distorted images
+    if (angle > 176 && angle < 184) || (angle > -4 && angle < 4)
         I_rotated = I_original;
         I_rotated_bin = I_bin_rem;
     else
