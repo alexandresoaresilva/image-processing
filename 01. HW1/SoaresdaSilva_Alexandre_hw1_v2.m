@@ -1,5 +1,6 @@
 %written by: Alexandre Soares & Mohak Kant
-%Sep 27, 2018
+% HW for ECE 4367 - Image Processing at Texas Tech University, prof. Dr Sari-Sarraf (fall 2018)
+% Sep 27, 2018
 
 close all
 clc, clear;
