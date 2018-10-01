@@ -6,9 +6,9 @@ close all
 clc, clear;
 filter_int=@(n)1/(n^2)*ones(n);
 L = 256;
-I_original = imread('Testimage2.tif');
+I_original = imread('Testimage1.tif');
 %% integration - blur
-I_blur = conv2(I_original,filter_int(5),'same');
+I_blur = conv2(I_original,filter_int(13),'same');
 I_blur = uint8(I_blur);
 %% correcting negatives
 I_blur = correct_negatives(I_blur); %just if there are negatives
@@ -84,7 +84,7 @@ function I_rem = remove_spades_numbers(I)
         end
 
         if change_from_white_to_black
-            if counter_white > 0 && counter_white < 10
+            if counter_white > 0 && counter_white < 20
                 I(i-counter_white:i) = 0;
             end
             counter_white = 0;
