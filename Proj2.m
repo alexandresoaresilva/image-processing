@@ -24,10 +24,7 @@ periodic_pattern_normal = extract_mesh(correct_illi_im, 11.3);
 % 
 % tempX = X(180:230,265:280);
 % tempX(tempX>12) = 7.5917;
-% tempX = X(180:230,265:280);
-% tempX(:,:) = 0;
 % X(180:230,265:280) = 0;
-% tempX(tempX>15) = 0;
 % figure
 % imagesc(X);
 % title('High Pass Filtered FFT')
