@@ -3,45 +3,76 @@ clc; clear;
 
 %% Read Image
 im = imread('Proj2.tif');
-% imagesc(im);
-% title('Orignal Image');
-% colormap gray
-% axis image;
+subplot(2,3,1);
+imagesc(im);
+title('Orignal Image');
+colormap gray
+axis image;
 %% Correct Illumination
 correct_illi_im = correctIlli(im);
+subplot(2,3,2);
+imagesc(correct_illi_im);
+title('Illumination Corrected Image');
+colormap gray
+axis image;
 
 %% Extract Periodic Pattern
-periodic_pattern_normal = extract_mesh(correct_illi_im, 11.3);
+[orig_fft, fft_im, filt_fft_im, periodic_pattern_normal] = extract_mesh(correct_illi_im, 11.3);
 
-%% Correct Illumination 2
-% fft_image = fft2(im);
-% X = log(1+abs(fftshift(fft_image)));
-% figure;
-% imagesc(X);
-% title('FFT');
+subplot(2,3,3);
+imagesc(fft_im);
+title('FFT');
+colormap gray
+axis image;
+
+subplot(2,3,4);
+imagesc(filt_fft_im);
+title('Low Pass Filtered FFT')
+colormap gray
+axis image;
+
+subplot(2,3,5);
+imagesc(periodic_pattern_normal);
+title('Extracted Periodic Pattern')
+colormap gray
+axis image;
+
+% %% Matlab
+% background = imopen(im,strel('disk',15));
+% mat_corrected_illi = im-background;
+% subplot(2,3,6);
+% imagesc(mat_corrected_illi);
+% title('Matlab Illi Corrected')
 % colormap gray
 % axis image;
 % 
-% tempX = X(180:230,265:280);
-% tempX(tempX>12) = 7.5917;
-% X(180:230,265:280) = 0;
+% [mat_orig_fft, mat_fft_im, mat_filt_fft_im, mat_periodic_pattern_normal] = extract_mesh(mat_corrected_illi, 11.3);
+% 
+% 
+% %% Freq Image Illi Corr 2
+% fft_i2 = fft_im;
+% fft_i2 = (fft_i2+2*ones(size(fft_i2)));
+% fft_i2(fft_i2<0) = 0;
+% 
 % figure
-% imagesc(X);
-% title('High Pass Filtered FFT')
+% subplot(3,1,1)
+% imagesc(fft_im)
 % colormap gray
-% axis image;
 % 
-% figure
-% imagesc(tempX);
-% title('High Pass Filtered FFT')
+% subplot(3,1,2)
+% imagesc(mat_fft_im)
 % colormap gray
-% axis image;
-
-
-% fft_image(fft_image>exp(12)) = 0.0;
+% [filt_g, blur_im] = gaussian_blur(im,1.42);
+% subplot(3,1,3)
+% imagesc(log(1+abs(fftshift(fft(blur_im)))));
+% colormap gray
+% correct_illi_im = im-blur_im;
 % 
-% ift = abs(ifft2(exp(ifftshift(tempX))-1));
+% % Using Freq Domain
 % 
+% 
+% % 
+% ift = abs(ifft2(orig_fft));
 % figure
 % mesh = uint8(ift);
 % imagesc(mesh);
@@ -50,13 +81,8 @@ periodic_pattern_normal = extract_mesh(correct_illi_im, 11.3);
 
 %% Functions
 function correct_illi_im = correctIlli(im)
-    [filt_g, blur_im] = gaussian_blur(im,1.42);
+    [filt_g, blur_im] = gaussian_blur(im,1.4);
     correct_illi_im = im-blur_im;
-    figure
-    imagesc(correct_illi_im);
-    title('Illumination Corrected Image');
-    colormap gray
-    axis image;
 end
 
 function [filt_g,blur_im] = gaussian_blur(im, std)
@@ -75,40 +101,66 @@ function [filt_g,blur_im] = gaussian_blur(im, std)
 end
 
 
-function mesh = extract_mesh(im, threshold)
+function [orig_fft, fft_im, filt_fft_im, mesh] = extract_mesh(im, threshold)
 
     %% Take 2 Dimensional Fourier Transform
-    fft_image = fft2(im);
-    X = log(1+abs(fftshift(fft_image)));
-    figure;
-    imagesc(X);
-    title('FFT');
-    colormap gray
-    axis image;
+    orig_fft = fft2(im);
+    shifted_and_scaled_fft = log(1+fftshift(orig_fft));
+    X = abs(shifted_and_scaled_fft);
+    fft_im = X;
+    
 
     %% Filter for Testing
     tempX = X;
     tempX(tempX<threshold) = 0;
-    figure
-    imagesc(tempX);
-    title('Low Pass Filtered FFT')
-    colormap gray
-    axis image;
+    filt_fft_im = tempX;
 
     %% Apply to orignal Image
-    fft_image(fft_image<exp(threshold)) = 0.0;
+    orig_fft(orig_fft<exp(threshold)) = 0.0;
 
     %% Inverse Fourier Transform
-    ift = abs(ifft2(fft_image));
-    
-    figure
+    ift = abs(ifft2(orig_fft));
     mesh = uint8(ift);
-    imagesc(mesh);
-    colormap gray
-    axis image;
+    
   
 end
 
 function blur_f = create_blur_filter(n)
     blur_f = (1/n^2)*ones(n,n);
+end
+
+function lpf_filt = lpf_filter(im, cut_off_radius)
+    lpf_filt = ones(size(im));
+    [u,v] = size(im);
+    center_u = u-u/2;
+    center_v = v-v/2;
+    
+    
+    [X,Y]=meshgrid(1:size(im,2),1:size(im,1));
+    disk_locations=sqrt((X-center_v).^2+(Y-center_u).^2) <= cut_off_radius;
+    lpf_filt = lpf_filt.*disk_locations;
+    
+    figure
+    imagesc(lpf_filt);
+    colormap gray
+    title('Low Pass Filter');
+end
+
+function hpf_filt = hpf_filter(im, cut_off_radius, value)
+    hpf_filt = ones(size(im));
+    [u,v] = size(im);
+    center_u = u-u/2;
+    center_v = v-v/2;
+    
+    
+    [X,Y]=meshgrid(1:size(im,2),1:size(im,1));
+    disk_locations=sqrt((X-center_v).^2+(Y-center_u).^2) <= cut_off_radius;
+    disk_locations = ~disk_locations;
+    hpf_filt = hpf_filt.*disk_locations;
+    hpf_filt(hpf_filt == 0) = value;
+    
+    figure
+    imagesc(hpf_filt);
+    colormap gray
+    title('High Pass Filter');
 end
