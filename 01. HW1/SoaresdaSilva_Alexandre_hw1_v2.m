@@ -6,7 +6,7 @@ close all
 clc, clear;
 filter_int=@(n)1/(n^2)*ones(n);
 L = 256;
-I_original = imread('Testimage1.tif');
+I_original = imread('Testimage5.tif');
 %% integration - blur
 I_blur = conv2(I_original,filter_int(13),'same');
 I_blur = uint8(I_blur);
