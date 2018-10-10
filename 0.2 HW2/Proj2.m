@@ -1,6 +1,6 @@
 %% Clear Workspace
 clc; clear;
-
+close all;
 %% Read Image
 im = imread('Proj2.tif');
 subplot(2,3,1);

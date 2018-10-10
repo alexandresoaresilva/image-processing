@@ -1,4 +1,5 @@
 clc; clear;
+close all;
 im = imread('Proj2.tif');
 figure
 imagesc(im);
