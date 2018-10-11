@@ -1,5 +1,4 @@
 clc; clear;
-close all;
 im = imread('Proj2.tif');
 figure
 imagesc(im);
@@ -10,48 +9,36 @@ title('Orignal Image');
 %% Matlab Correct Illumination
 % background = imopen(im,strel('disk',15));
 % mat_corrected_illi = im-background;
+% % figure
+% % imagesc(mat_corrected_illi);
+% % colormap gray
+% % title('Matlab Image');
+% % 
+% mat_corrected_illi_fft = abs(log(1+(fftshift(fft2(mat_corrected_illi)))));
 % figure
-% imagesc(mat_corrected_illi);
+% imagesc(mat_corrected_illi_fft);
+% title('FFT Mat Corrected');
 % colormap gray
-% title('Matlab Image');
+% axis image;
 
 %% Extract Pattern
-[pattern, correct_ilu] = (extractPattern(im));
+correct_im = correct_illumination_freq(im);
+pattern = (extractPattern(correct_im));
 pattern = uint8(pattern);
 figure
 imagesc(pattern);
 colormap gray
 title('Periodic Pattern in Image');
 
-%% Correct Illumination
-% im2 = im+50;
-% for j=1:size(im2,2)
-%     im2(:,j) = (im2(:,j)-mean(im2(:,j)))/(std(correct_ilu(:,j)));
-% end
-% for j=1:size(im2,1)
-%     im2(j,:) = (im2(j,:)-mean(im2(j,:)));
-% end
-% figure
-% imagesc(im2);
-% colormap gray
-% title('Correct Illumination Profile Depth');
-
-% correct_illi_im = correctIlli(im);
-% figure
-% imagesc(correct_illi_im);
-% colormap gray
-% title('Correct Illumination of Pattern');
-
-% figure
-% imagesc(correct_ilu);
-% colormap gray
-% title('Correct Illumination of Image');
+% correct_ilu = uint8(correct_ilu);
+figure
+imagesc(correct_im);
+colormap gray
+title('correct_ilu');
 
 
 %% Functions
-function [filt_img, filt_img2] = extractPattern(im)
-    
-
+function [filt_img] = extractPattern(im)
     orig_fft = fftshift(fft2(im));
     figure
     subplot(2,2,1)
@@ -76,6 +63,7 @@ function [filt_img, filt_img2] = extractPattern(im)
     colormap gray
     axis image;
 
+%     nobrightSpikes(203:207,278:280) = 1;
     orig_fft_high_filter = orig_fft;
     orig_fft_high_filter(nobrightSpikes) = 0;
     scaled_orig_high_fft = log(abs(orig_fft_high_filter));
@@ -86,35 +74,10 @@ function [filt_img, filt_img2] = extractPattern(im)
     title('High Pass Filter Masked Image');
     colormap gray
     axis image;
-    
-    amplitudeThreshold2 = 11.8;
-    brightSpikes = (X > amplitudeThreshold2) ; 
-    figure
-    subplot(1,2,1)
-    imagesc(brightSpikes);
-    title('Low Pass Filter');
-    colormap gray
-    axis image;
-    
-    orig_fft_low_filter = orig_fft;
-    orig_fft_low_filter(brightSpikes) = 0;
-    orig_fft_low_filter(1:175,273) = orig_fft_low_filter(1:175,272);
-    orig_fft_low_filter(235:size(orig_fft,1),273) = orig_fft_low_filter(235:size(orig_fft,1),272);
-    scaled_orig_low_fft = log(abs(orig_fft_low_filter));
-    minValue = min(min(scaled_orig_low_fft));
-    maxValue = max(max(scaled_orig_low_fft));
-%     figure
-    subplot(1,2,2)
-    imagesc(scaled_orig_low_fft, [minValue maxValue]);
-    title('High Pass Filter Masked Image');
-    colormap gray
-    axis image;
+  
 
     filteredImage = ifft2(fftshift(orig_fft_high_filter));
     filt_img = abs(filteredImage);
-    
-    filteredImage2 = ifft2(fftshift(orig_fft_low_filter));
-    filt_img2 = abs(filteredImage2);
 end
 
 function correct_illi_im = correctIlli(im)
@@ -137,4 +100,44 @@ function [filt_g,blur_im] = gaussian_blur(im, std)
     blur_im = uint8(conv2(im,filt_g,'same'));
 end
 
-
+function correct_im = correct_illumination_freq(im)
+    %     amplitudeThreshold2 = 11.8;
+    %     brightSpikes = (X > amplitudeThreshold2) & ones(size(X)) ;
+    % %     brightSpikes(202:208,270:275) = 1;
+    %     figure
+    %     subplot(1,2,1)
+    %     imagesc(brightSpikes);
+    %     title('Low Pass Filter');
+    %     colormap gray
+    %     axis image;
+    orig_fft = fftshift(fft2(im));
+    figure
+    subplot(1,2,1)
+    imagesc(abs(orig_fft));
+    title('Original FFT');
+    colormap gray
+    axis image;
+    orig_fft_low_filter = orig_fft;
+    
+%     orig_fft_low_filter(:,273) = 0;
+%     orig_fft_low_filter(brightSpikes) = 0;
+%     orig_fft_low_filter(1:175,273) = orig_fft_low_filter(1:175,272);
+%     orig_fft_low_filter(235:size(orig_fft,1),273) = orig_fft_low_filter(235:size(orig_fft,1),272);
+    c_value = orig_fft_low_filter(205,273);
+    orig_fft_low_filter(200:210,273) = 0;
+    orig_fft_low_filter(205,267:280) = 0;
+    orig_fft_low_filter(205,273) = c_value;
+    scaled_orig_low_fft = log(abs(orig_fft_low_filter));
+    minValue = min(min(scaled_orig_low_fft));
+    maxValue = max(max(scaled_orig_low_fft));
+%     figure
+    subplot(1,2,2)
+    imagesc(scaled_orig_low_fft);
+    imagesc(scaled_orig_low_fft, [minValue maxValue]);
+    title('Illumination Corrected FFT');
+    colormap gray
+    axis image;
+    
+    filteredImage2 = ifft2(fftshift(orig_fft_low_filter));
+    correct_im = abs(filteredImage2);
+end
