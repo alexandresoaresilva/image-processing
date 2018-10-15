@@ -1,5 +1,4 @@
 close all; clc, clear
-filt_n = @(n,mean,std_dev)1/sqrt(2*pi*var)
 
 filt_n = @(n)1/n^2*ones(n);
 adjust_lg_abs_I_fft =...
@@ -14,23 +13,10 @@ I_fft = fft2(I);
 abs_I_fft = abs(fftshift(I_fft));
 lg_abs_I_fft = log(abs_I_fft);
 figure
-%lg_abs_I_fft = adjust_lg_abs_I_fft(lg_abs_I_fft);
-%I_conv = conv2(lg_abs_I_fft,filt_n(3),'same');
-%I_conv_th = I_conv;
-% I_conv_th =  binI(163, I_conv);
-% I_conv_th =  binI(170, lg_abs_I_fft);
 
-pattern_i = find(lg_abs_I_fft > 11 );
 
-background_i_lo = find(lg_abs_I_fft <= 11.5);
-% background_i_hi = find(lg_abs_I_fft > 13.4);
-% (background_i_lo == background_i_hi)
-% pattern_i = find(lg_abs_I_fft > 168 );
-% background_i = find(lg_abs_I_fft <= 168);
-
-% [m,n] = size(I_conv_th);
-% m = m/2;
-% n = n/2;
+pattern_i = find(lg_abs_I_fft > 12 );
+background_i_lo = find(lg_abs_I_fft <= 14);
 I_g = fftshift(I_fft); 
 I_g(background_i_lo ) = 0;
 % I_g(background_i_hi) = 0;
@@ -43,9 +29,9 @@ a = uint8(round(I_ifft));
 [m,n] = size(lg_abs_I_fft);
 
 a = histeq(a);
-%imshow([I, lg_abs_I_fft, lg_abs_I_fft; lg_abs_I_fft, I_g, a]);
-
 imagesc([I, lg_abs_I_fft, lg_abs_I_fft; lg_abs_I_fft, I_g, a]);
+
+%imagesc([I, lg_abs_I_fft, lg_abs_I_fft; lg_abs_I_fft, I_g, a]);
 title('original, lg_abs_I_fft, I_conv');
 colormap gray
 
@@ -63,4 +49,17 @@ function binImage =  binI(threshold, image)
     binImage = image;
     binImage(image<(threshold)) = 0;
     binImage(image>(threshold)) = 255;
+end
+
+function filt = norm_filt(n)
+    guass_filt =@(x,y,std)exp(-(x.^2+y^2)/(2*std^2))*1/(2*pi*std^2);
+
+    x = -n:1:n;
+    y= x;
+    len = length(x);
+    for i=1:len
+        for j=1:len
+            filt(i,j) = guass_filt(x(i),y(j),4);
+        end
+    end
 end

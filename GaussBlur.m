@@ -15,7 +15,6 @@ end
 surf(X,Y,filt_g);
 %Z = sin(X) + cos(Y);
 
-
 a = imread('TestImage1.tif');
 imshow(a);
 figure
