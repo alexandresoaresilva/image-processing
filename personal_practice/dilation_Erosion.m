@@ -19,6 +19,6 @@ A(n_quart:(n_quart+n_half),n_quart:(n_quart+n_half)) = 1;
 
 imshow(A);
 r = round(n_quart/2);
-SE = strel('disk',r)
+SE = strel('square',r)
 J = imerode(A,SE);
 imshow([A,J]) 
