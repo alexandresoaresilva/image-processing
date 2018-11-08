@@ -2,78 +2,46 @@ clc, clear, close all
 % addpath('VLFEATROOT')
 %vl_version verbose
 %for the closing operation
-SELECT_I = 8;
-
-AVG_FILTER_SIZE = 3;
+AVG_FILTER_SIZE = 5;
 [file_names, file_names_char] = save_file_names_in_folder(pwd,'jpg');
 
-% % webcam setup
-webcamlist_conn = webcamlist;
-webcam_connected = webcam(webcamlist_conn{1});
-webcam_connected.Resolution ='640x480';
+
 % 
 run('VLFEATROOT/toolbox/vl_setup');
-% webcam_connected.Resolution = '320x240';
-prv = preview(webcam_connected);
-prv.Parent.Visible = 'off';
-prv.Parent.Parent.Parent.Position(1:2) = [0.6 .5];
-prv.Parent.Visible = 'on';
-prompt = 'Press enter to capture a frame';
-x = input(prompt);
-I = snapshot(webcam_connected);
-delete(prv);
+I1 = cam_Capt
+
 %% load file
 
 % I = imread('fuzzy3_2.jpg');
 digits = extract_digits(I,AVG_FILTER_SIZE);
 
-I2 = imread('IMG_20181102_100540197.jpg');
-digits2 = extract_digits(I2,AVG_FILTER_SIZE);
+% I2 = imread('IMG_20181102_100540197.jpg');
+% digits2 = extract_digits(I2,AVG_FILTER_SIZE);
 
 figure;
 sub_plots(digits);
-figure;
-sub_plots(digits2);
 %% sift code
 % run('VLFEATROOT/toolbox/vl_setup');
 % vl_version verbose
 
-[f,d] = vl_sift(single(digits{1}));
-% figure;
-perm = randperm(size(f,2)) ;
-P = length(perm);
-sel = perm(1:P);
-% figure
-h1 = vl_plotframe(f(:,sel)) ;
-h2 = vl_plotframe(f(:,sel)) ;
-set(h1,'color','k','linewidth',2) ;
-set(h2,'color','y','linewidth',1) ;
-h3 = vl_plotsiftdescriptor(d(:,sel),f(:,sel)) ;
-set(h3,'color','g') ;
-
-
-% I2 = imgaussfilt(I2,20);
-% I2 = wiener2(I2,[10 10]);
-% I2 = single(edge(I2,'Canny'));
-% 
-% I2 = imclose(I2,se);
-
-% subplot(1,2,2)
-% imshow(I2,[]);
-% figure;
-[f1,d1] = vl_sift(single(digits2{2}));
-perm = randperm(size(f1,2)) ;
-P = length(perm);
-sel = perm(1:P);
-h1 = vl_plotframe(f1(:,sel)) ;
-h2 = vl_plotframe(f1(:,sel)) ;
-set(h1,'color','k','linewidth',2) ;
-set(h2,'color','y','linewidth',1) ;
-h3 = vl_plotsiftdescriptor(d1(:,sel),f1(:,sel)) ;
-set(h3,'color','g') ;
-
-[matches, scores] = vl_ubcmatch(d, d1);
 %% functions
+
+function I = cam_Capt
+
+    % % webcam setup
+    webcamlist_conn = webcamlist;
+    webcam_connected = webcam(webcamlist_conn{1});
+    webcam_connected.Resolution ='640x480';
+    % webcam_connected.Resolution = '320x240';
+    prv = preview(webcam_connected);
+    prv.Parent.Visible = 'off';
+    prv.Parent.Parent.Parent.Position(1:2) = [0.6 .5];
+    prv.Parent.Visible = 'on';
+    prompt = 'Press enter to capture a frame';
+    x = input(prompt);
+    I = snapshot(webcam_connected);
+    delete(prv);
+end
 %digits is a cell array
 function digits = extract_digits(I,avg_filter_size)
     if length(size(I)) > 2
@@ -86,8 +54,8 @@ function digits = extract_digits(I,avg_filter_size)
     % I1 = I;
     I1 = conv2(I,LPF,'valid');
     I_bin = I1;
-    I_bin = ~imbinarize(uint8(I1),.5);
-    for i=1:20
+    I_bin = ~imbinarize(uint8(I1),.35);
+    for i=1:5
         I_bin = medfilt2(I_bin);
     end
     %% matlab nonuniform illumination
@@ -99,26 +67,19 @@ function digits = extract_digits(I,avg_filter_size)
     I_cell = {I, I1, I_bin};
     I_props = regionprops(I_bin);
 
-%     figure
-%     imshow(I_bin);
+    figure
+    imshow(I_bin);
     hold on;
     digits = cellmat(0);
     j = 1;
     for i=1:length(I_props)
         if I_props(i).Area > (M*N / 330)
-%             if I_props(i).BoundingBox(4) > N/8 %n is height
-                rect = rectangle('Position',I_props(i).BoundingBox,'EdgeColor','r','LineWidth',3);
-                
+                rect = rectangle('Position',I_props(i).BoundingBox,...
+                    'EdgeColor','r','LineWidth',3);
                 [digit_bin, pre, pos] = I_crop_withBound(I_bin,I_props(i).BoundingBox);
                 
                 x_origin = I_props(i).BoundingBox(1)-pre(2);
                 y_origin = I_props(i).BoundingBox(2)-pre(1);
-%                 if x_origin < 0 
-%                     x_origin  = 0;
-%                 end
-%                 if y_origin < 0 
-%                     y_origin  = 0;
-%                 end
                 
                 x_width = I_props(i).BoundingBox(3) + pre(2)+pos(2);
                 y_width = I_props(i).BoundingBox(4) + pre(1)+pos(1);
@@ -126,11 +87,8 @@ function digits = extract_digits(I,avg_filter_size)
                     x_width, y_width];
                 digit = imcrop(I, BoundingBox);
 
-%                 digit = I_crop_withBound(I,I_props(i).BoundingBox);
                 digits{j} = digit;
-%                 digits{j} = I_close(digit,150);
                 j = j + 1;
-%             end
         end
     end    
 end
