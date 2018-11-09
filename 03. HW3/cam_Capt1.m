@@ -7,33 +7,29 @@ vl_version verbose
 % 
 % AVG_FILTER_SIZE = 3;
 % [file_names, file_names_char] = save_file_names_in_folder(pwd,'jpg');
-% 
-
-
-
 
 % imshow(I)
 AVG_FILTER_SIZE = 3;
-
-BIN = 0
+DIGIT_SIZE = 160;
+% BIN = 0
 %% Pre-Process Image
-Ia_orig = cam_Capt;
+% Ia_orig = cam_Capt; %capturing image
 % Ib_orig = cam_Capt;
-% Ia_orig = imread('7_4.jpg');
-Ib_orig = imread('7_5.jpg');
-Ia = extract_digits(Ia_orig,AVG_FILTER_SIZE,BIN);
-Ib = extract_digits(Ib_orig,AVG_FILTER_SIZE,BIN);
+Ia_orig = imread('7_2.jpg');
+Ib_orig = imread('7_4.jpg');
+[Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
+[Ib, Ib_bin] = extract_digits(Ib_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 
-Ia = Ia{1};
-Ib = Ib{1};
+% Ia = Ia{1};
+% Ib = Ib{1};
+Ia = Ia_bin{1};
+Ib = Ib_bin{1};
 
 imshow(Ia)
-
-% 
 % Ia = (edge(Ia,'Canny'));
 % Ib = (edge(Ib,'Canny'));
 % 
-% se = strel('disk',2);
+% se = strel('disk',1);
 % Ia = imdilate(Ia,se);
 % Ib = imdilate(Ib,se);
 
@@ -47,18 +43,15 @@ colormap gray
 subplot(122)
 imagesc(Ib)
 colormap gray
-
 %% SIFT 
-
-
 [fa,da] = vl_sift(im2single((Ia))) ;
 [fb,db] = vl_sift(im2single((Ib))) ;
 
 figure(2)
 subplot(121)
 imshow(Ia)
-perm = randperm(size(fa,2)) ;
-sel = perm ;
+perm_indeces = randperm(size(fa,2)) ;
+sel = perm_indeces ;
 h1 = vl_plotframe(fa(:,sel)) ;
 h2 = vl_plotframe(fa(:,sel)) ;
 set(h1,'color','k','linewidth',3) ;
@@ -69,8 +62,8 @@ set(h3,'color','g') ;
 figure(2)
 subplot(122)
 imshow(Ib);
-perm = randperm(size(fb,2)) ;
-sel = perm;
+perm_indeces = randperm(size(fb,2)) ;
+sel = perm_indeces;
 h1 = vl_plotframe(fb(:,sel)) ;
 h2 = vl_plotframe(fb(:,sel)) ;
 set(h1,'color','k','linewidth',3) ;
@@ -79,11 +72,10 @@ h3 = vl_plotsiftdescriptor(db(:,sel),fb(:,sel)) ;
 set(h3,'color','g') ;
 
 [matches, scores] = vl_ubcmatch(da,db);
-[drop, perm] = sort(scores, 'ascend') ;
-perm = perm;
-matches = matches(:, perm) ;
-
-scores  = scores(perm) ;
+[drop, perm_indeces] = sort(scores, 'ascend') ;
+perm_indeces = perm_indeces;
+matches = matches(:, perm_indeces) ; %sorts matches
+scores  = scores(perm_indeces) ;  %sorts scores
 
 
 figure(3) ; clf ;
@@ -91,26 +83,99 @@ imagesc(cat(2, Ia, Ib)) ;
 colormap gray
 axis image off ;
 
-
-
-xa = fa(1,matches(1,:)) ;
-xb = fb(1,matches(2,:)) + size(Ia,2) ;
+% angles_diff = rad2deg(abs(fa(4,matches(1,:))-fb(4,matches(2,:))));
+% median_angles_diff = median(angles_diff)
+% j=1; %index for x,y
+% selected_matches = zeros(3,1);
+% for i=1:length(angles_diff)
+%     if angles_diff(i) < (median_angles_diff+45)
+%         selected_matches(:,j) = matches(:,i);
+%         xa(j) = fa(1,matches(1,i)) % 1st row of matches are indeces of fa ;
+%         xb(j) = fb(1,matches(2,i)) + size(Ia,2) ; % 2nd row of matches are indeces of fb ;
+%         ya(j) = fa(2,matches(1,i)) ;
+%         yb(j) = fb(2,matches(2,i)) ;
+%         j = j + 1;
+%     end 
+% end
+xa = fa(1,matches(1,:)) % 1st row of matches are indeces of fa ;
+xb = fb(1,matches(2,:)) + size(Ia,2) ; % 2nd row of matches are indeces of fb ;
 ya = fa(2,matches(1,:)) ;
 yb = fb(2,matches(2,:)) ;
 
+pairsA = [xa' ya'];
+pairsB = [xb' yb']; %if it is unique and has the same magnitude & angle
+
+BOUNDARY = 5;
+seen_before = 0;
+selected_matches = zeros(2,1);
+newscores=0;
+close_indeces = 0;
+k = 1;
+scores_find = 0;
+i = 1;
+index_found_matches = 0;
+while(i)
+    lower_b = pairsB(i,:)-BOUNDARY;
+    upper_b = pairsB(i,:)+BOUNDARY ;
+    first_index = 0;
+    seen_before = 0;
+    close_indeces = 0;
+    k = 1;
+    %run through the whole list to find similar x, y's
+    for j=1:length(pairsB) 
+        if ( pairsB(j,1) > lower_b(1) && pairsB(j,1) < upper_b(1))
+            if (pairsB(j,2) > lower_b(2) && pairsB(j,2) < upper_b(2))
+                if ~seen_before %NOT seen before
+                    seen_before = 1;
+                    first_index = j;
+                    index_found_matches = index_found_matches + 1;
+                end
+                close_indeces(k) = j;
+                k = k + 1;
+            end
+        end %if pairsB
+    end
+    close_scores = scores(close_indeces);
+    [smallest_score, index_min_close] = min(close_scores);
+    index_min = find(scores == smallest_score);
+    %erases other close pairs and saves the minimum score
+    pair_min = pairsB(index_min,:);
+    pairsB(close_indeces,:) = 0;
+    pairsB(index_min,:) = pair_min;
+    
+    scores(close_indeces) = 0;
+    scores(index_min) = smallest_score;
+    
+    selected_matches(1:2,index_found_matches) = matches(:,index_min); %saves the i_th selection
+%     selected_matches(3,k) = j; %saves the corresponding index of the match
+    clear close_indeces;
+%      pairsB(:,close_indeces) = zeros(2,length(close_indeces));
+    seen_before = 0;
+    
+    
+    if k == length(pairsB) || i == length(pairsB)
+        break;
+    end    
+    i = i + 1;
+end
 hold on ;
+
 h = line([xa ; xb], [ya ; yb]) ;
 set(h,'linewidth', 1, 'color', 'b') ;
 
-vl_plotframe(fa(:,matches(1,:))) ;
+vl_plotframe(fa(:,selected_matches(1,:))) ;
 fb(1,:) = fb(1,:) + size(Ia,2) ;
-vl_plotframe(fb(:,matches(2,:))) ;
+vl_plotframe(fb(:,selected_matches(2,:))) ;
 colormap gray
 axis image off ;
 
-sum(scores)
-
+sum(scores);
 %%
+function remove_bkgrnd_matches(I,I_bin,f, d)
+
+        remove_bkgrnd_matches
+
+end
 function I = cam_Capt
 
     % % webcam setup
@@ -162,7 +227,7 @@ function [digit, pre, pos] = I_crop_withBound(I_bin,boundingBox)
     end
 end
 
-function digits = extract_digits(I,avg_filter_size,binarized)
+function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
     if length(size(I)) > 2
         I = rgb2gray(I);
     end
@@ -174,7 +239,7 @@ function digits = extract_digits(I,avg_filter_size,binarized)
     I1 = conv2(I,LPF,'valid');
     I_bin = I1;
     I_bin = ~imbinarize(uint8(I1),.35);
-    for i=1:5
+    for i=1:20
         I_bin = medfilt2(I_bin);
     end
     %% matlab nonuniform illumination
@@ -205,14 +270,12 @@ function digits = extract_digits(I,avg_filter_size,binarized)
                 BoundingBox = [x_origin,y_origin,...
                     x_width, y_width];
                 
+                digitBin = imresize(digit_bin, [digit_side digit_side]);
+                digits_bin{j} = digitBin;
+
+                digit = imresize(imcrop(I, BoundingBox), [digit_side digit_side]);
+                digits{j} = digit;
                 
-                if binarized
-                    digit = imresize(digit_bin, [120 120]);
-                    digits{j} = digit;
-                else
-                    digit = imresize(imcrop(I, BoundingBox), [120 120]);
-                    digits{j} = digit;
-                end
                 j = j + 1;
         end
     end    
