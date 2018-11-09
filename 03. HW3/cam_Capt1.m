@@ -81,7 +81,7 @@ set(h3,'color','g') ;
 
 [matches, scores] = vl_ubcmatch(da,db);
 [drop, perm_indeces] = sort(scores, 'ascend') ;
-perm_indeces = perm_indeces;
+% perm_indeces = perm_indeces;
 matches = matches(:, perm_indeces) ; %sorts matches
 scores  = scores(perm_indeces) ;  %sorts scores
 
