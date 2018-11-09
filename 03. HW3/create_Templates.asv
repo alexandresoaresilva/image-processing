@@ -1,8 +1,10 @@
 %Database Creation
-Templates = cell(10,1);
+image_Templates = cell(10,1);
+descriptor_Templates = cell(10,1);
+frame_Templates = cell(10,1);
 
 for i=1:10
-clc, clearvars -except Templates i, close all
+clc, clearvars -except image_Templates descriptor_Templates frame_Templates i, close all
 
 run('VLFEATROOT/toolbox/vl_setup');
 vl_version verbose
@@ -29,9 +31,26 @@ set(h2,'color','y','linewidth',2) ;
 h3 = vl_plotsiftdescriptor(da(:,sel),fa(:,sel)) ;
 set(h3,'color','g') ;
 
-Templates{i,1} = da;
+image_Templates{i,1} = Ia;
+descriptor_Templates{i,1} = da;
+frame_Templates{i,1} = fa;
+
+figure(2)
+imshow(Ia,[]);
+
+x = input('Are you happy with the saved template? y/n ' , 's');
 
 end
+
+if x == 'n'
+  i = i - 1;  
+else
+    
+end
+
+save('image_Templates.mat', 'image_Templates');
+save('descriptor_Templates.mat', 'descriptor_Templates');
+save('frame_Templates.mat', 'frame_Templates');
 
 %%
 function I = cam_Capt
