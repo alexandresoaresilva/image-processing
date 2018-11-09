@@ -1,5 +1,5 @@
 clc, clear, close all
-% addpath('VLFEATROOT')
+addpath('VLFEATROOT')
 run('VLFEATROOT/toolbox/vl_setup');
 vl_version verbose
 %for the closing operation
@@ -10,20 +10,26 @@ vl_version verbose
 
 % imshow(I)
 AVG_FILTER_SIZE = 3;
-DIGIT_SIZE = 160;
+DIGIT_SIZE = 120;
 % BIN = 0
 %% Pre-Process Image
 % Ia_orig = cam_Capt; %capturing image
 % Ib_orig = cam_Capt;
-Ia_orig = imread('7_2.jpg');
-Ib_orig = imread('7_4.jpg');
-[Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
+a = load('image_Templates.mat');
+Ia_orig = a.image_Templates{7}
+% Ia_orig = imread('6.jpg');
+Ib_orig = imread('6.jpg');
+
+% [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
+Ia_bin = ~imbinarize(Ia_orig,.35);
+Ia = Ia_bin;
 [Ib, Ib_bin] = extract_digits(Ib_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 
 % Ia = Ia{1};
 % Ib = Ib{1};
-Ia = Ia_bin{1};
-Ib = Ib_bin{1};
+% Ia = Ia_bin{1};
+Ib = Ia_bin;
+% Ib = Ib_bin{1};
 
 imshow(Ia)
 % Ia = (edge(Ia,'Canny'));
@@ -44,8 +50,10 @@ subplot(122)
 imagesc(Ib)
 colormap gray
 %% SIFT 
-[fa,da] = vl_sift(im2single((Ia))) ;
-[fb,db] = vl_sift(im2single((Ib))) ;
+[fa,da] = vl_sift(im2single(Ia)) ;
+[fb,db] = vl_sift(im2single(Ib)) ;
+a = load('Templates.mat')
+da = a.Templates{2};
 
 figure(2)
 subplot(121)
@@ -76,7 +84,6 @@ set(h3,'color','g') ;
 perm_indeces = perm_indeces;
 matches = matches(:, perm_indeces) ; %sorts matches
 scores  = scores(perm_indeces) ;  %sorts scores
-
 
 figure(3) ; clf ;
 imagesc(cat(2, Ia, Ib)) ;
@@ -136,12 +143,12 @@ while(i)
         end %if pairsB
     end
     close_scores = scores(close_indeces);
-    [smallest_score, index_min_close] = min(close_scores);
+    [smallest_score, index_min_close] = min(close_scores(close_scores>0));
     index_min = find(scores == smallest_score);
     %erases other close pairs and saves the minimum score
-    pair_min = pairsB(index_min,:);
-    pairsB(close_indeces,:) = 0;
-    pairsB(index_min,:) = pair_min;
+%     pair_min = pairsB(index_min,:);
+%     pairsB(close_indeces,:) = 0;
+%     pairsB(index_min,:) = pair_min;
     
     scores(close_indeces) = 0;
     scores(index_min) = smallest_score;
@@ -152,11 +159,10 @@ while(i)
 %      pairsB(:,close_indeces) = zeros(2,length(close_indeces));
     seen_before = 0;
     
-    
+    i = i + 1;
     if k == length(pairsB) || i == length(pairsB)
         break;
-    end    
-    i = i + 1;
+    end
 end
 hold on ;
 
