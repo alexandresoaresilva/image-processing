@@ -1,6 +1,6 @@
 clc, clear, close all
 
-run('vlfeat/toolbox/vl_setup');
+run('VLFEATROOT/toolbox/vl_setup');
 vl_version verbose
 
 load('Templates.mat');
@@ -87,6 +87,7 @@ for i=1:length(Templates)
     db = descriptor_Templates{i};
 %     db = Templates{i};
     [matches, score] = vl_ubcmatch(da,db,3);
+    
     no_matches(i) = length(matches);
     figure; clf ;
     imagesc(cat(2, Ia, Ib)) ;
@@ -109,13 +110,21 @@ for i=1:length(Templates)
     axis image off ;
 
     
-%     [drop, perm] = sort(score, 'ascend') ;
+    [drop, perm] = sort(score, 'ascend') ;
+    median_score = median(drop);
+    drop(drop>median_score) = 0;
+%     median_index = find()
 %     perm = perm;
 %     score  = score(perm) ;
-    scores(i) = sum(score);
+    scores(i) = sum(drop);
     
 %     matches = matches(:, perm) ;
 end
+
+normalized_scores = abs((scores-mean(scores))./no_matches);
+[~,pI] = min(normalized_scores); 
+disp(['Predicted Number: ', num2str(pI-1)])
+
 
 % 
 % figure(3) ; clf ;

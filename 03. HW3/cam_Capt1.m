@@ -59,11 +59,13 @@ figure(2)
 subplot(121)
 imshow(Ia)
 perm_indeces = randperm(size(fa,2)) ;
+
 sel = perm_indeces ;
 h1 = vl_plotframe(fa(:,sel)) ;
 h2 = vl_plotframe(fa(:,sel)) ;
 set(h1,'color','k','linewidth',3) ;
 set(h2,'color','y','linewidth',2) ;
+
 h3 = vl_plotsiftdescriptor(da(:,sel),fa(:,sel)) ;
 set(h3,'color','g') ;
 
