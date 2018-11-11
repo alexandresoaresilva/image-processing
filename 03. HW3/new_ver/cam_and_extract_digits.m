@@ -2,7 +2,7 @@ clc, clear, close all
 addpath('VLFEATROOT')
 
 run('VLFEATROOT/toolbox/vl_setup');
-vl_version verbose
+%vl_version verbose
 %for the closing operation
 AVG_FILTER_SIZE = 3; %for extracting digits
 DIGIT_SIZE = 120; %image size

@@ -18,7 +18,7 @@ DIGIT_SIZE = 120;
 a = load('image_Templates.mat');
 Ia_orig = a.image_Templates{7}
 % Ia_orig = imread('6.jpg');
-Ib_orig = imread('6.jpg');
+Ib_orig = imread('7.jpg');
 
 % [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 Ia_bin = ~imbinarize(Ia_orig,.35);
