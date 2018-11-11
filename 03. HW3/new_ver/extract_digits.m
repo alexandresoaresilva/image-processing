@@ -11,7 +11,7 @@ function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
     % I1 = I;
     I1 = conv2(I,LPF,'valid');
     I_bin = I1;
-    I_bin = ~imbinarize(uint8(I1),.5);
+    I_bin = ~imbinarize(uint8(I1),.35);
     for i=1:20
         I_bin = medfilt2(I_bin);
     end

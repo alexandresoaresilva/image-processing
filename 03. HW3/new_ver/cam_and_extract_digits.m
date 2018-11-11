@@ -12,15 +12,16 @@ addpath('numbers'); %where images/mat files are stored are stored
 % a = load('image_Templates.mat');
 % Ia_orig = a.image_Templates{8};
 a = load('number_imgs.mat');
-
-Ia_orig = a.number_imgs{1}(72);
-
+Ia_orig = a.number_imgs{1}(0);
 [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 Ia = Ia{1};
 Ia_bin = process_bin_num(Ia_bin{1});
 % to compare (camera can be used, as well)
-Ib_orig = imread('7_2.jpg');
-[Ib, Ib_bin] = extract_digits(Ib_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
+
+b = load('image_Templates.mat');
+
+Ib_orig = b.image_Templates{1};
+[Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
 Ib = Ib{1};
 Ib_bin = process_bin_num(Ib_bin{1});
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,6 +37,7 @@ hold off
 subplot(222);
 imshow([Ia_bin,Ib_bin]);
 title('Ia bin X Ib bin');
+
 [fa_bin,da_bin] = run_SIFT(Ia_bin,0);
 x_offset = size(Ia_bin,2);
 [fb_bin,db_bin] = run_SIFT(Ib_bin,x_offset);
@@ -44,14 +46,14 @@ x_offset = size(Ia_bin,2);
 m  = median(scores_normal);
 std_n = std(scores_normal);
 s = 0 % .5*std_n;
-index_m = find(scores_normal >= (m + s) );
+index_m = find(scores_normal >= (m + 3*s) );
 selec_scores_norm = scores_normal(index_m);
 selec_matches_norm = matches_normal(:,index_m);
 
 [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin) ;
 m_bin  = median(scores_bin);
 std_bin = std(scores_normal);
-index_m_bin = find(scores_bin >= (m_bin + 2.5*std_bin));
+index_m_bin = find(scores_bin >= (m_bin + std_bin));
 selec_scores = scores_bin(index_m_bin);
 selec_matches = matches_bin(:,index_m_bin);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -67,7 +69,6 @@ title('Ia bin X Ib bin');
 
 draw_lines(da_bin, fa_bin, db_bin, fb_bin,...
     selec_matches, selec_scores, x_offset);
-
 %% 
 function [f,d] = run_SIFT(I, x_offset)
     % A frame is a disk of center f(1:2), scale f(3) and orientation f(4)
