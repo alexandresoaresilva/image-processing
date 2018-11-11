@@ -2,7 +2,7 @@ clc, clear, close all
 addpath('VLFEATROOT')
 
 run('VLFEATROOT/toolbox/vl_setup');
-vl_version verbose
+%vl_version verbose
 %for the closing operation
 AVG_FILTER_SIZE = 3; %for extracting digits
 DIGIT_SIZE = 120; %image size
@@ -11,15 +11,26 @@ addpath('numbers'); %where images/mat files are stored are stored
 %image A (reference)
 % a = load('image_Templates.mat');
 % Ia_orig = a.image_Templates{8};
+<<<<<<< HEAD
 a = load('number_imgs.mat');
 Ia_orig = a.number_imgs{1}(22);
+=======
+a = load('numbers/number_imgs.mat');
+Ia_orig = a.number_imgs{1}(0);
+>>>>>>> 0086be229b742931a5d5df50e0624a6599cfbf7a
 [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 Ia = Ia{1};
 Ia_bin = process_bin_num(Ia_bin{1});
 % to compare (camera can be used, as well)
 
+<<<<<<< HEAD
 b = load('image_Templates.mat');
 Ib_orig = b.image_Templates{3};
+=======
+b = load('numbers/image_Templates.mat');
+
+Ib_orig = b.image_Templates{1};
+>>>>>>> 0086be229b742931a5d5df50e0624a6599cfbf7a
 [Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
 Ib = Ib{1};
 Ib_bin = process_bin_num(Ib_bin{1});
