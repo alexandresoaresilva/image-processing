@@ -11,14 +11,14 @@ addpath('numbers'); %where images/mat files are stored are stored
 %image A (reference)
 % a = load('image_Templates.mat');
 % Ia_orig = a.image_Templates{8};
-a = load('number_imgs.mat');
+a = load('numbers/number_imgs.mat');
 Ia_orig = a.number_imgs{1}(0);
 [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 Ia = Ia{1};
 Ia_bin = process_bin_num(Ia_bin{1});
 % to compare (camera can be used, as well)
 
-b = load('image_Templates.mat');
+b = load('numbers/image_Templates.mat');
 
 Ib_orig = b.image_Templates{1};
 [Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
