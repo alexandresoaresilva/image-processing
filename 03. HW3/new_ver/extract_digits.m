@@ -1,5 +1,5 @@
 function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
-    STRUCTURING_ELEMENT_SIZE = 2;
+    STRUCTURING_ELEMENT_SIZE = 5;
     
     if length(size(I)) > 2
         I = rgb2gray(I);
@@ -18,7 +18,8 @@ function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
     %% matlab nonuniform illumination
     se = strel('disk',STRUCTURING_ELEMENT_SIZE);
     I_bin = imclose(I_bin,se);
-
+    
+    
     I_cell = {I, I1, I_bin};
     I_props = regionprops(I_bin);
 

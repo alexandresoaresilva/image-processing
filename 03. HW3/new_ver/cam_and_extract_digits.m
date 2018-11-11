@@ -12,15 +12,14 @@ addpath('numbers'); %where images/mat files are stored are stored
 % a = load('image_Templates.mat');
 % Ia_orig = a.image_Templates{8};
 a = load('number_imgs.mat');
-Ia_orig = a.number_imgs{1}(0);
+Ia_orig = a.number_imgs{1}(22);
 [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
 Ia = Ia{1};
 Ia_bin = process_bin_num(Ia_bin{1});
 % to compare (camera can be used, as well)
 
 b = load('image_Templates.mat');
-
-Ib_orig = b.image_Templates{1};
+Ib_orig = b.image_Templates{3};
 [Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
 Ib = Ib{1};
 Ib_bin = process_bin_num(Ib_bin{1});
@@ -42,18 +41,20 @@ title('Ia bin X Ib bin');
 x_offset = size(Ia_bin,2);
 [fb_bin,db_bin] = run_SIFT(Ib_bin,x_offset);
 %%  SIFT MATCHES ///////////////////////////////////////////////////////////
+% --------------------------- grayscale
 [matches_normal, scores_normal] = vl_ubcmatch(da, db) ;
 m  = median(scores_normal);
 std_n = std(scores_normal);
 s = 0 % .5*std_n;
-index_m = find(scores_normal >= (m + 3*s) );
+index_m = find(scores_normal < (m + 3*std_n ));
 selec_scores_norm = scores_normal(index_m);
 selec_matches_norm = matches_normal(:,index_m);
 
+% --------------------------- binarized
 [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin) ;
 m_bin  = median(scores_bin);
-std_bin = std(scores_normal);
-index_m_bin = find(scores_bin >= (m_bin + std_bin));
+std_bin = std(scores_bin);
+index_m_bin = find(scores_bin < m_bin + 1.5*std_bin);
 selec_scores = scores_bin(index_m_bin);
 selec_matches = matches_bin(:,index_m_bin);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -110,15 +111,13 @@ function draw_lines(da,fa,db,fb,matches,scores,x_offset)
 
 end
 
-% function 
-% 
-% end
-
 function I = process_bin_num(I_bin)
     LPF = avg_filt(3);
     I_bin = uint8(I_bin*255);
+   
     % I1 = I;
     I = conv2(I_bin,LPF,'valid');
+    I = edge(I,'Canny');
 end
 
 function filt = avg_filt(n)
