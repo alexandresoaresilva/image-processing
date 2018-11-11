@@ -74,9 +74,9 @@ digits_strg = ["zero", "one", "two", "three", "four", "four", "five", "six",...
 keySet = [0 1 2 3 4 5 6 7 8 9];
 
 digit = containers.Map(keySet,digit_imgs);
-% digits{1} = digit;
-% digits{2} = keySet;
-% digits{3} = digits_strg;
-
-% b.number_imgs{3}
-% d0, d1, d2, d3, d4, d5, d6, d7, d8, d9
+plot_i = 251;
+for i=1:length(c.image_Templates)
+    subplot(plot_i);
+    imshow(c.image_Templates{i});
+    plot_i = plot_i + 1;
+end

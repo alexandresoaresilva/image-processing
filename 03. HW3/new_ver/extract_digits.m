@@ -10,8 +10,9 @@ function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
     LPF = avg_filt(avg_filter_size);
     % I1 = I;
     I1 = conv2(I,LPF,'valid');
-    I_bin = I1;
-    I_bin = ~imbinarize(uint8(I1),.35);
+%     I1 = histeq(I1)
+%     I_bin = histeq(I1);
+    I_bin = ~imbinarize(uint8(I1),.3);
     for i=1:20
         I_bin = medfilt2(I_bin);
     end
