@@ -7,6 +7,7 @@ clc, clear, close all
 matches = [1 6 7 8 9 11 13 15 16 18 19 24; 14 32 24 25 6 8 32 14 32 10 8 32];
 scores = [ 64356 54119 66032 76157 99879 150982 64073 62596 75491 116415 207530 131190];
 
+function nonUniques(matches,scores)
 Aa = matches(1,:);
 Ab = matches(2,:);
 Bc = scores;
@@ -30,10 +31,10 @@ B2 = Bc;
 
 A3 = [];
 B3 = [];
-  k = 1;
-    for j = 1:length(B2)           %Reduce to best unique matches
-        P = A2(1,j);
-        if(isempty(find(A3 == P)))
+k = 1;
+for j = 1:length(B2)           %Reduce to best unique matches
+    P = A2(1,j);
+    if(isempty(find(A3 == P)))
         Q = A2(2,j);
         idxOfUniqueMinScore = find(B2 == min(B2(round((find(A2 == Q).')/2))));
         idxOfUniqueMinMatch = A2(2,idxOfUniqueMinScore(1));
@@ -44,6 +45,7 @@ B3 = [];
             k = k + 1;
         end
         
-        end
-        
     end
+    
+end
+end
