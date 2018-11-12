@@ -9,15 +9,14 @@ DIGIT_SIZE = 120; %image size
 addpath('numbers'); %where images/mat files are stored are stored
 %% Loading and pre-processing images
 %image A & B
-a = load('digit.mat');
-digits = a.digit;
+load('digits_map.mat');
 % scores_collected = [];
 % no_matches = [];
 for i=0:9
     no_matches = [];
     scores_collected = [];
 
-    dig = digits(i);
+    dig = digits_map(i);
     Ia_orig = dig{2};    
     % extract 120 x 120 digits normal and binarized
     [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
