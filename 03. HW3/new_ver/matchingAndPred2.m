@@ -103,7 +103,7 @@ function digits = extract_digits(I,avg_filter_size,binarized)
     digits = cellmat(0);
     j = 1;
     for i=1:length(I_props)
-        if I_props(i).Area > (M*N / 330)
+        if I_props(i).Area > (M*N / 350)
 %                 rect = rectangle('Position',I_props(i).BoundingBox,...
 %                     'EdgeColor','r','LineWidth',3);
                 [digit_bin, pre, pos] = I_crop_withBound(I_bin,I_props(i).BoundingBox);

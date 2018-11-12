@@ -17,13 +17,13 @@ for i=0:9
     scores_collected = [];
 
     dig = digits_map(i);
-    Ia_orig = dig{2};    
+    Ia_orig = dig{3};    
     % extract 120 x 120 digits normal and binarized
     [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
     Ia_bin = Ia_bin{1};
     Ia = process_I(Ia{1});
     dig2 = digits_map(i);
-    Ib_orig = dig2{3};
+    Ib_orig = dig2{5};
 %     Ia = Ia{1};
     [Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
 %         Ib = process_I(Ib{1});
@@ -51,12 +51,17 @@ for i=0:9
 %         selec_matches_norm = matches_normal(:,index_m);
 
     % --------------------------- binarized
-    [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin,1.3) ;
-    m_bin  = median(scores_bin);
-    std_bin = std(scores_bin);
-    index_m_bin = find(scores_bin < m_bin +1.5*std_bin);
-    selec_scores = scores_bin(index_m_bin);
-    selec_matches = matches_bin(:,index_m_bin);
+    [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin,1.3);
+    
+    [selec_matches, selec_scores ] = nonUniques(matches_bin, scores_bin);
+    
+%     m_bin  = median(scores_bin);
+%     std_bin = std(scores_bin);
+%     index_m_bin = find(scores_bin < m_bin +1.5*std_bin);
+%     selec_scores = scores_bin(index_m_bin);
+%     selec_matches = matches_bin(:,index_m_bin);
+    
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %         figure
 %         subplot(121);
@@ -73,7 +78,51 @@ for i=0:9
         draw_lines(da_bin, fa_bin, db_bin, fb_bin,...
             selec_matches, selec_scores, x_offset);
 end
-%% 
+%%
+
+function [unique_maches, unique_scores] = nonUniques(matchings,scorings)
+    Aa = matchings(1,:);
+    Ab = matchings(2,:);
+    Bc = scorings;
+
+    n = length(Bc);
+    while n ~= 0
+        nn = 0;
+        for ii = 1:n-1
+            if Bc(ii) > Bc(ii+1)
+                [Bc(ii+1),Bc(ii)] = deal(Bc(ii), Bc(ii+1));
+                [Aa(ii+1),Aa(ii)] = deal(Aa(ii), Aa(ii+1));
+                [Ab(ii+1),Ab(ii)] = deal(Ab(ii), Ab(ii+1));
+                nn = ii;
+            end
+        end
+        n = nn;
+    end
+
+    A2 = [Aa;Ab];
+    B2 = Bc;
+
+    unique_maches = double.empty(2,0);
+    unique_scores = double.empty(1,0);
+    k = 1;
+    for j = 1:length(B2)           %Reduce to best unique matches
+        P = A2(1,j);
+        if(isempty(find(unique_maches == P)))
+            Q = A2(2,j);
+            idxOfUniqueMinScore = find(B2 == min(B2(round((find(A2 == Q).')/2))));
+            idxOfUniqueMinMatch = A2(2,idxOfUniqueMinScore(1));
+            if(isempty(find(unique_maches == Q)))
+                unique_maches(1,k) = A2(1,j);
+                unique_maches(2,k) = A2(2,idxOfUniqueMinScore);
+                unique_scores(k) = B2(idxOfUniqueMinScore(1));
+                k = k + 1;
+            end
+
+        end
+
+    end
+end
+
 function predict_no(i, scores_collected, no_matches)
 
     normalized_scores = abs(scores_collected-mean(scores_collected));
