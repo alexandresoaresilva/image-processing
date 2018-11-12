@@ -8,7 +8,7 @@ load('digits_map.mat')
 
 %% Capture Input Image
 AVG_FILTER_SIZE = 3;
-BIN = 1;
+BIN = 0;
 
 
 Ia_orig = cam_Capt;
@@ -16,8 +16,8 @@ Ia = extract_digits(Ia_orig,AVG_FILTER_SIZE,BIN);
 Ia = Ia{1};
 
 %% Predict and Match
-thresh = 1.5;
-[predictedNumberOptions, minScores, scores, normalized_scores, no_matches, counts] = matchAndPredict(digits_map, Ia, 1, thresh, AVG_FILTER_SIZE, BIN);
+thresh = 10;
+[predictedNumberOptions, minScores, scores, normalized_scores, no_matches, counts] = matchAndPredict(digits_map, Ia, 0, thresh, AVG_FILTER_SIZE, BIN);
 
 %% Functions
 function I = cam_Capt
@@ -103,7 +103,7 @@ function digits = extract_digits(I,avg_filter_size,binarized)
     digits = cellmat(0);
     j = 1;
     for i=1:length(I_props)
-        if I_props(i).Area > (M*N / 350)
+        if I_props(i).Area > (M*N / 330)
 %                 rect = rectangle('Position',I_props(i).BoundingBox,...
 %                     'EdgeColor','r','LineWidth',3);
                 [digit_bin, pre, pos] = I_crop_withBound(I_bin,I_props(i).BoundingBox);
@@ -209,15 +209,21 @@ function [predictedNumberOptions, minScores, scores, normalized_scores, no_match
     
     
 
-    count0 = find(counts ~= 0);
-    count0 = counts(count0);
+%     [~,count0] = find(counts ~= 0);
+%     count0 = counts(count0);
     
-    count0 = sort(count0,'descend');
+%     count0 = sort(count0,'descend');
+    [count0,indiSort] = sort(counts,'descend');
+    indiSort = indiSort-1;
     
-    maxFreq1 = count0(1);
-    maxFreq2 = count0(2);
+    maxFreq1 = indiSort(1);
+    maxFreq2 = indiSort(2);
+    maxFreq3 = indiSort(3);
     
-%     if(~all(diff(sort(count0(count0 ~= 0)))))
+    countTemp = find(count0 ~= 0);
+    count0 = count0(countTemp);
+    
+    if(all(diff(sort(count0(count0 ~= 0)))))
 %         for k=0:9
 %     %         frequency = counts(k);
 %             indi = find(predictedNumberOptions-1 == k);
@@ -228,16 +234,30 @@ function [predictedNumberOptions, minScores, scores, normalized_scores, no_match
 %             end
 %         end
 %         [~,pI] = min(measure);
-%     else
-%         [~,pI] = min(minScores);
+      disp(['Predicted Number: ', num2str(maxFreq1)])
+    else
+        [~,pI] = min(minScores);
 %         pI = predictedNumberOptions(pI);
-%     end
+        indi = find(predictedNumberOptions-1 == maxFreq1);
+        score1 = sum(minScores(indi))/length(indi);
+
+        indi = find(predictedNumberOptions-1 == maxFreq2);
+        score2 = sum(minScores(indi))/length(indi);
+
+        indi = find(predictedNumberOptions-1 == maxFreq3);
+        score3 = sum(minScores(indi))/length(indi);
+
+
+        disp(['Score: ', num2str(maxFreq1), ' - ' num2str(score1)])
+        disp(['Score: ', num2str(maxFreq2), ' - ' num2str(score2)])
+        disp(['Score: ', num2str(maxFreq3), ' - ' num2str(score3)])
+    end
 
     
-    
-    disp(['Predicted Number: ', num2str(pI-1)])
-    
-    disp(['Measure: ', num2str(measure)])
+%    
+%     disp(['Predicted Number: ', num2str(pI-1)])
+%     
+%     disp(['Measure: ', num2str(measure)])
 end
 
 function [A3, B3] = nonUniques(matchings,scorings)
