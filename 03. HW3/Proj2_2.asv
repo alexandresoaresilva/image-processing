@@ -89,14 +89,14 @@ for i=1:length(Templates)
     [matches, score] = vl_ubcmatch(da,db,3);
     
     k = 1;
-    for j = 1:length(scores)           %Reduce to best unique matches
+    for j = 1:length(matches)           %Reduce to best unique matches
         Q = matches(2,j);
         idxOfUniqueMinScore = find(scores == min(scores(find(matches == Q))));
         idxOfUniqueMinMatch = matches(idxOfUniqueMinScore(1));
 
         if(find(matches == Q) ~= NULL)
             matches2(1,k) = matches(1,j);
-            matches2(2,k) = matches(2,idxOfUniqueMinMatch);
+            matches2(2,k) = 
             scores2(k) = scores(idxOfUniqueMinScore(1));
             k = k + 1;
         end
