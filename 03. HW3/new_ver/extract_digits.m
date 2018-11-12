@@ -12,9 +12,10 @@ function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
     I1 = conv2(I,LPF,'valid');
 %     I1 = histeq(I1)
 %     I1 = histeq(I1);
-%     meanGrayLevel = mean2(I1);
-    
-    I_bin = ~imbinarize(uint8(I1),'adaptive');
+    meanGrayLevel = mean2(I1);
+    meanGrayLevel = meanGrayLevel/500;
+%     if meanGrayLevel > 
+    I_bin = ~imbinarize(uint8(I1),meanGrayLevel);
     for i=1:20
         I_bin = medfilt2(I_bin);
     end
