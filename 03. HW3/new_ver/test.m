@@ -8,77 +8,88 @@ load('digits_map.mat');
 %% paramteters
 AVG_FILTER_SIZE = 3; %for extracting digits
 DIGIT_SIZE = 120; %image size
-MOTION = 20;
-MATCH_THRESHOLD = 2.2;
-BINARIZE = 1;
-SHOW_MATCHES = 1;
-DIGIT_SELECTED = 0;
+MOTION = 24;
+MATCH_THRESHOLD = 10;
+BINARIZE = 0;
+SHOW_MATCHES = 0;
+DIGIT_SELECTED = 9;
 
 
 % %% paramteters
-% numbers are predicted 50/50 with these parameters for alex's (using {5},{2})
+% numbers are predicted 6/10 with these parameters for alex's (
+% using dig{8}, dig{5}, dig{2}})
+% dig{1}; 1/10
+% dig{3}; 4/10
+% dig{4}; 5/10
+% dig{6}; 1/10
+% dig{7}; 4/10
 
 % AVG_FILTER_SIZE = 3; %for extracting digits
 % DIGIT_SIZE = 120; %image size
-% MOTION = 20;
+% MOTION = 24;
 % MATCH_THRESHOLD = 2.2;
 % BINARIZE = 1;
-% SHOW_MATCHES = 1;
-% DIGIT_SELECTED = 0;
+% SHOW_MATCHES = 0;
+% DIGIT_SELECTED = 9;
 %% Loading and pre-processing images
 %image A & B
+
 accumulate = [];
 avg_Mohak = [];
 avg_Alex = [];
-for i=0:9
-    DIGIT_SELECTED = i;
-    dig = digits_map(DIGIT_SELECTED);
+
+for i=1:10
+    DIGIT_SELECTED = i-1;
+     dig = digits_map(DIGIT_SELECTED);
+     Ia_orig = dig{8};
     disp('                                           ');
     disp('===========================================');
     disp(['RUN & number: ', num2str(DIGIT_SELECTED)]);
     disp('-------------------------------------------');
-    for j=1:8
-        Ia_orig = dig{j};
-        [predictedNumberOptions, minScores, scores, normalized_scores,...
-            no_matches, counts] = matchAndPredict(digits_map, Ia_orig, 0,...
-            MATCH_THRESHOLD, AVG_FILTER_SIZE, DIGIT_SIZE, 1);
+%     for j=1:8
+        
+%         [predictedNumberOptions, minScores, scores, normalized_scores,...
+%             no_matches, counts] = matchAndPredict(digits_map, Ia_orig, 0,...
+%             MATCH_THRESHOLD, AVG_FILTER_SIZE, DIGIT_SIZE, 1);
         %alex version
         [most_freq_num, scores_sum,no_matches, total_matches] =...
-            match_and_predict(Ia_orig, digits_map,0, AVG_FILTER_SIZE,...
+            match_and_predict(Ia_orig, digits_map,SHOW_MATCHES, AVG_FILTER_SIZE,...
                               MATCH_THRESHOLD, DIGIT_SIZE, BINARIZE, MOTION);
         disp('-------------------------------------------');
         disp(['number: ', num2str(DIGIT_SELECTED)]);
-        disp(['PREDICTED Mohak: ', num2str(predictedNumberOptions-1)]); 
+%         disp(['PREDICTED Mohak: ', num2str(predictedNumberOptions-1)]); 
         disp(['PREDICTED Alex: ', num2str(most_freq_num)]);
-        if ((predictedNumberOptions-1) == i)
-            accumulate(j,1) = 1;
+        if most_freq_num == (i-1)
+            avg_Alex(i) = 1;
         else
-            accumulate(j,1) = 0;
+             avg_Alex(i) = 0;
         end
-        if (most_freq_num == i)
-            accumulate(j,2) =  1;
-        else
-            accumulate(j,2) = 0;
-        end
-    end
-    avg_Mohak(i+1) = mean(accumulate(:,1))*100;
-    avg_Alex(i+1) = mean(accumulate(:,2))*100;
-    disp('-------------------------------------------');
-    disp(['number: ', num2str(DIGIT_SELECTED)]);
-    disp(['acc. Mohak after 8 runs: ', num2str(avg_Mohak(i+1)),' %']); 
-    disp(['acc. Alex after 8 runs: ', num2str(avg_Alex(i+1)),' %']);
+%         
+%         if ((predictedNumberOptions-1) == i)
+%             accumulate(j,1) = 1;
+%         else
+%             accumulate(j,1) = 0;
+%         end
+%         if (most_freq_num == i)
+%             accumulate(j,2) =  1;
+%         else
+%             accumulate(j,2) = 0;
+%         end
+% %     end
+%     avg_Mohak(i+1) = mean(accumulate(:,1))*100;
+%     avg_Alex(i+1) = mean(accumulate(:,2))*100;
+%     disp('-------------------------------------------');
+%     disp(['number: ', num2str(DIGIT_SELECTED)]);
+%     disp(['acc. Mohak after 8 runs: ', num2str(avg_Mohak(i+1)),' %']); 
+%     disp(['acc. Alex after 8 runs: ', num2str(avg_Alex(i+1)),' %']);
 end
-avg_Mohak = mean(avg_Mohak)*100;
-avg_Alex = mean(avg_Alex)*100;
-disp('-------------------------------------------');
-disp(['number: ', num2str(DIGIT_SELECTED)]);
-disp(['acc. Mohak total: ', num2str(avg_Mohak),' %']); 
-disp(['acc. Alex total: ', num2str(avg_Alex),' %']);
-
-
-function acc = calc_accuracy(most_freq_num, predictedNumberOptions)
-    most_freq_num
-end
+disp(['accuracy: ', num2str(mean(avg_Alex)*100),' %']);
+% avg_Mohak = mean(avg_Mohak)*100;
+% avg_Alex = mean(avg_Alex)*100;
+% disp('-------------------------------------------');
+% disp(['number: ', num2str(DIGIT_SELECTED)]);
+% disp(['acc. Mohak total: ', num2str(avg_Mohak),' %']); 
+% disp(['acc. Alex total: ', num2str(avg_Alex),' %']);
 
 function [predictedNumberOptions, minScores, scores, normalized_scores,...
     no_matches, counts] = ...
@@ -103,9 +114,10 @@ function [predictedNumberOptions, minScores, scores, normalized_scores,...
                 Ib = Ib{1};
             end
             
-            [fb,db] = vl_sift(im2single((Ib))) ;
+%             [fb,db] = vl_sift(im2single(Ib),'edgethresh', 3.5,'PeakThresh',10) ;
+            [fb,db] = vl_sift(im2single(Ib)) ;
             [matches, score] = vl_ubcmatch(da,db,SIFT_match_thresh);
-            [matches, score] = clean_features(matches, score, fa, fb);
+            [matches, score] = clean_features(matches, score, fa, fb,size(Ib,2));
             if(showMatches)
                 figure; clf ;
                 plot_SIFT_lines(Ia, Ib, fa, fb, matches);
@@ -210,7 +222,7 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
          %% SIFT
             [fb,db] = vl_sift(single(Ib));
             [matches, scores] = vl_ubcmatch(da, db, match_thresh);
-            [matches, scores] = clean_features(matches, scores, fa, fb);
+            [matches, scores] = clean_features(matches, scores, fa, fb,size(Ib,2));
             
             if show_matches
                 subplot(2,4,j);
@@ -234,11 +246,11 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
 %     most_freq_num = find_most_frequent_digit(scores_sum);
 end
 
-function [matches, scores] = clean_features(matches, scores, fa, fb)
+function [matches, scores] = clean_features(matches, scores, fa, fb,offset)
     [matches, scores] = remove_inf_and_nans(matches, scores);
     [matches, scores] = unique_matches_scores(fb,0, matches, scores);    
     [matches, scores] = unique_matches_scores(fa,1,matches, scores);
-    [matches, scores] = remove_senseless_scores(matches, scores, fa, fb);
+    [matches, scores] = remove_senseless_scores(matches, scores, fa, fb,offset);
     [matches, scores] = remove_outliers(matches, scores, 0);
 %     [matches, scores] = keep_only_three_best_features(matches, scores);
 end
@@ -325,7 +337,8 @@ function [matches, scores] = remove_outliers(matches, scores, no_std)
     end
 end
 
-function [matches,scores] = unique_matches_scores(fb_or_fa, is_fa, matches,scores)
+function [matches,scores] = unique_matches_scores(fb_or_fa, is_fa,...
+                                                matches,scores,offset)
     index = 2;
     if is_fa
         index = 1;
@@ -346,7 +359,7 @@ function [matches,scores] = unique_matches_scores(fb_or_fa, is_fa, matches,score
     end
 end
 
-function [matches, scores] = remove_senseless_scores(matches, scores, fa, fb)
+function [matches, scores] = remove_senseless_scores(matches, scores, fa, fb, offset)
     L = length(scores);
     
     if L == 1
@@ -358,7 +371,7 @@ function [matches, scores] = remove_senseless_scores(matches, scores, fa, fb)
         matches = matches(:,ind);
     else
         xa = fa(1,matches(1,:)) ;
-        xb = fb(1,matches(2,:)) ;
+        xb = fb(1,matches(2,:))+offset;
         ya = fa(2,matches(1,:)) ;
         yb = fb(2,matches(2,:)) ;
 
