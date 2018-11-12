@@ -1,7 +1,7 @@
 clc, clear, close all
-addpath('VLFEATROOT')
+addpath('vlfeat-0.9.21')
 
-run('VLFEATROOT/toolbox/vl_setup');
+run('vlfeat-0.9.21/toolbox/vl_setup');
 addpath('numbers'); %where images/mat files are stored are stored
 load('digits_map.mat');
 
@@ -9,12 +9,10 @@ load('digits_map.mat');
 AVG_FILTER_SIZE = 3; %for extracting digits
 DIGIT_SIZE = 120; %image size
 MOTION = 24;
-MATCH_THRESHOLD = 10;
-BINARIZE = 0;
+MATCH_THRESHOLD = 2.2;
+BINARIZE = 1;
 SHOW_MATCHES = 0;
 DIGIT_SELECTED = 9;
-
-
 % %% paramteters
 % numbers are predicted 6/10 with these parameters for alex's (
 % using dig{8}, dig{5}, dig{2}})
@@ -23,6 +21,13 @@ DIGIT_SELECTED = 9;
 % dig{4}; 5/10
 % dig{6}; 1/10
 % dig{7}; 4/10
+
+Ia_orig = cam_capt; 
+%alex version
+[most_freq_num, scores_sum,no_matches, total_matches] =...
+    match_and_predict(Ia_orig, digits_map,SHOW_MATCHES, AVG_FILTER_SIZE,...
+                      MATCH_THRESHOLD, DIGIT_SIZE, BINARIZE, MOTION)
+
 
 % AVG_FILTER_SIZE = 3; %for extracting digits
 % DIGIT_SIZE = 120; %image size
@@ -33,24 +38,26 @@ DIGIT_SELECTED = 9;
 % DIGIT_SELECTED = 9;
 %% Loading and pre-processing images
 %image A & B
-
-accumulate = [];
-avg_Mohak = [];
-avg_Alex = [];
-
-for i=1:10
-    DIGIT_SELECTED = i-1;
-     dig = digits_map(DIGIT_SELECTED);
-     Ia_orig = dig{8};
+function run_test_digits()
+    accumulate = [];
+    avg_Mohak = [];
+    avg_Alex = [];
+% for i=1:10
+%     DIGIT_SELECTED = i-1;
+%      dig = digits_map(DIGIT_SELECTED);
+%     Ia_orig = dig{8};   
+    Ia_orig = cam_capt; 
+    
     disp('                                           ');
     disp('===========================================');
     disp(['RUN & number: ', num2str(DIGIT_SELECTED)]);
     disp('-------------------------------------------');
 %     for j=1:8
         
-%         [predictedNumberOptions, minScores, scores, normalized_scores,...
-%             no_matches, counts] = matchAndPredict(digits_map, Ia_orig, 0,...
-%             MATCH_THRESHOLD, AVG_FILTER_SIZE, DIGIT_SIZE, 1);
+        [predictedNumberOptions, minScores, scores, normalized_scores,...
+            no_matches, counts] = matchAndPredict(digits_map, Ia_orig, 0,...
+            MATCH_THRESHOLD, AVG_FILTER_SIZE, DIGIT_SIZE, 1);
+        
         %alex version
         [most_freq_num, scores_sum,no_matches, total_matches] =...
             match_and_predict(Ia_orig, digits_map,SHOW_MATCHES, AVG_FILTER_SIZE,...
@@ -59,12 +66,12 @@ for i=1:10
         disp(['number: ', num2str(DIGIT_SELECTED)]);
 %         disp(['PREDICTED Mohak: ', num2str(predictedNumberOptions-1)]); 
         disp(['PREDICTED Alex: ', num2str(most_freq_num)]);
-        if most_freq_num == (i-1)
-            avg_Alex(i) = 1;
-        else
-             avg_Alex(i) = 0;
-        end
-%         
+%         if most_freq_num == (i-1)
+%             avg_Alex(i) = 1;
+%         else
+%              avg_Alex(i) = 0;
+%         end
+% %         
 %         if ((predictedNumberOptions-1) == i)
 %             accumulate(j,1) = 1;
 %         else
@@ -82,7 +89,7 @@ for i=1:10
 %     disp(['number: ', num2str(DIGIT_SELECTED)]);
 %     disp(['acc. Mohak after 8 runs: ', num2str(avg_Mohak(i+1)),' %']); 
 %     disp(['acc. Alex after 8 runs: ', num2str(avg_Alex(i+1)),' %']);
-end
+% end
 disp(['accuracy: ', num2str(mean(avg_Alex)*100),' %']);
 % avg_Mohak = mean(avg_Mohak)*100;
 % avg_Alex = mean(avg_Alex)*100;
@@ -90,6 +97,7 @@ disp(['accuracy: ', num2str(mean(avg_Alex)*100),' %']);
 % disp(['number: ', num2str(DIGIT_SELECTED)]);
 % disp(['acc. Mohak total: ', num2str(avg_Mohak),' %']); 
 % disp(['acc. Alex total: ', num2str(avg_Alex),' %']);
+end
 
 function [predictedNumberOptions, minScores, scores, normalized_scores,...
     no_matches, counts] = ...
@@ -122,8 +130,6 @@ function [predictedNumberOptions, minScores, scores, normalized_scores,...
                 figure; clf ;
                 plot_SIFT_lines(Ia, Ib, fa, fb, matches);
             end
-
-      
             %colecting the sum of scores to find the smallest among the
             %most frequent 
 %             scores(j,i) = sum(score);
@@ -338,7 +344,7 @@ function [matches, scores] = remove_outliers(matches, scores, no_std)
 end
 
 function [matches,scores] = unique_matches_scores(fb_or_fa, is_fa,...
-                                                matches,scores,offset)
+                                                matches,scores)
     index = 2;
     if is_fa
         index = 1;

@@ -20,8 +20,8 @@ function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
         I_bin = medfilt2(I_bin);
     end
     %% matlab nonuniform illumination
-    se = strel('disk',STRUCTURING_ELEMENT_SIZE);
-    I_bin = imclose(I_bin,se);
+    se = strel('disk', STRUCTURING_ELEMENT_SIZE);
+    I_bin = imclose(I_bin, se);
     
     
     I_cell = {I, I1, I_bin};

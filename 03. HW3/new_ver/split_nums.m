@@ -2,11 +2,13 @@
 clear, clc, close all;
 
 
-old = cd('E:\Google Drive\02. Image Processing\hw3_database');
-[file_names2, file_names2_char] = save_file_names_in_folder(pwd,'jpg');
-load('E:\_local Home\Documents\Git\image-processing\03. HW3\new_ver\numbers\digit.mat')
-number = cell(10,1);
-numberbin = cell(10,1);
+% old = cd('E:\Google Drive\02. Image Processing\hw3_database');
+% [file_names2, file_names2_char] = save_file_names_in_folder(pwd,'jpg');
+% load('E:\_local Home\Documents\Git\image-processing\03. HW3\new_ver\numbers\digit.mat')
+% number = cell(10,1);
+% numberbin = cell(10,1);
+
+
 keySet = [];
 for i=1:size(file_names2,1)
     SIDE = 240;
