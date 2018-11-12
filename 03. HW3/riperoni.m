@@ -12,7 +12,7 @@ Aa = matches(1,:);
 Ab = matches(2,:);
 Bc = scores;
 
-n = length(Bc);
+n = length(Bc);3
 while n ~= 0
     nn = 0;
     for ii = 1:n-1

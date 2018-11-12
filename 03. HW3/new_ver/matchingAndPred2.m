@@ -15,10 +15,10 @@ Ia_orig = cam_Capt;
 Ia = extract_digits(Ia_orig,AVG_FILTER_SIZE,BIN);
 Ia = Ia{1};
 %% Predict and Match
-thresh = 10;
+thresh = 1;
 [predictedNumberOptions, minScores, scores, normalized_scores,...
     no_matches, counts] =...
-    matchAndPredict(digits_map, Ia, 0, thresh, AVG_FILTER_SIZE, BIN);
+    matchAndPredict(digits_map, Ia, 1, thresh, AVG_FILTER_SIZE, BIN);
 %% Functions
 function I = cam_Capt
 
@@ -149,7 +149,7 @@ function [predictedNumberOptions, minScores, scores,...
             [fb,db] = vl_sift(im2single((Ib))) ;
             [matches, score] = vl_ubcmatch(da,db,thresh);
             
-            [matches, score] = nonUniques(matches,score);
+            [matches, score] = nonUniqueReduction(matches,score);
             
             if(showMatches)
                 figure; clf ;
@@ -238,7 +238,7 @@ function [predictedNumberOptions, minScores, scores,...
     end
 end
 
-function [A3, B3] = nonUniques(matchings,scorings)
+function [A3, B3] = nonUniqueReduction(matchings,scorings)
     Aa = matchings(1,:);
     Ab = matchings(2,:);
     Bc = scorings;
@@ -260,24 +260,28 @@ function [A3, B3] = nonUniques(matchings,scorings)
     A2 = [Aa;Ab];
     B2 = Bc;
 
+    Aa = A2(1,:);
+    Ab = A2(2,:);
+    Bc = B2;
+
     A3 = double.empty(2,0);
     B3 = double.empty(1,0);
+
     k = 1;
-    for j = 1:length(B2)           %Reduce to best unique matches
-        P = A2(1,j);
-        if(isempty(find(A3 == P)))
-            Q = A2(2,j);
-            idxOfUniqueMinScore = find(B2 == min(B2(round((find(A2 == Q).')/2))));
-            idxOfUniqueMinMatch = A2(2,idxOfUniqueMinScore(1));
-            if(isempty(find(A3 == Q)))
-                A3(1,k) = A2(1,j);
-                A3(2,k) = A2(2,idxOfUniqueMinScore);
-                B3(k) = B2(idxOfUniqueMinScore(1));
-                k = k + 1;
-            end
-
+    for j = 1:length(Bc)
+        aa = find(Aa == Aa(j));
+        ab = find(Ab == Ab(j));
+    
+        idxs = [aa,ab];
+        best = find(Bc == min(Bc(idxs)));
+    
+        if (isempty(find(A3 == Aa(best))) && isempty(find(A3 == Ab(best))))
+            A3(1,k) = Aa(best);
+            A3(2,k) = Ab(best);
+            B3(k) = Bc(best);
+            k = k + 1;
         end
-
+    
     end
 end
 
