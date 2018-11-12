@@ -1,4 +1,4 @@
-function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
+function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
     STRUCTURING_ELEMENT_SIZE = 5;
     
     if length(size(I)) > 2
@@ -11,8 +11,9 @@ function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
     % I1 = I;
     I1 = conv2(I,LPF,'valid');
 %     I1 = histeq(I1)
-%     I_bin = histeq(I1);
-    I_bin = ~imbinarize(uint8(I1),.3);
+%     I1 = histeq(I1);
+    %binarizing lelvel
+    I_bin = ~imbinarize(uint8(I1),.33);
     for i=1:20
         I_bin = medfilt2(I_bin);
     end
@@ -30,7 +31,8 @@ function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
     digits = cellmat(0);
     j = 1;
     for i=1:length(I_props)
-        if I_props(i).Area > (M*N / 330)
+        if I_props(i).Area > (M*N / 1200)
+           if  I_props(i).BoundingBox(4) > M/6
 %                 rect = rectangle('Position',I_props(i).BoundingBox,...
 %                     'EdgeColor','r','LineWidth',3);
                 [digit_bin, pre, pos] = I_crop_withBound(I_bin,I_props(i).BoundingBox);
@@ -50,6 +52,7 @@ function [digits, digits_bin] = extract_digits(I,avg_filter_size,digit_side)
                 digits{j} = digit;
                 
                 j = j + 1;
+           end
         end
     end    
 end
