@@ -17,13 +17,13 @@ for i=0:9
     scores_collected = [];
 
     dig = digits_map(i);
-    Ia_orig = dig{1};    
+    Ia_orig = dig{2};    
     % extract 120 x 120 digits normal and binarized
     [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
     Ia_bin = Ia_bin{1};
     Ia = process_I(Ia{1});
     dig2 = digits_map(i);
-    Ib_orig = dig2{4};
+    Ib_orig = dig2{3};
 %     Ia = Ia{1};
     [Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
 %         Ib = process_I(Ib{1});
@@ -51,7 +51,7 @@ for i=0:9
 %         selec_matches_norm = matches_normal(:,index_m);
 
     % --------------------------- binarized
-    [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin) ;
+    [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin,1.3) ;
     m_bin  = median(scores_bin);
     std_bin = std(scores_bin);
     index_m_bin = find(scores_bin < m_bin +1.5*std_bin);
@@ -132,7 +132,7 @@ function I = process_bin_num(I_bin,avg_filter_size)
     % I1 = I;
 %     I = conv2(I_bin,LPF,'valid');
     I = edge(I,'Canny');
-    x = fspecial('motion',15,0);
+    x = fspecial('motion',10,0);
 %     y = fspecial('motion',25,90);
 %     LPF = avg_filt(5);
 %     
