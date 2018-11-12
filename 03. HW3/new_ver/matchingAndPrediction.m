@@ -8,7 +8,7 @@ load('digit.mat')
 
 %% Capture Input Image
 AVG_FILTER_SIZE = 3;
-BIN = 1;
+BIN = 0;
 
 
 Ia_orig = cam_Capt;
@@ -16,8 +16,8 @@ Ia = extract_digits(Ia_orig,AVG_FILTER_SIZE,BIN);
 Ia = Ia{1};
 
 %% Predict and Match
-thresh = 1.5;
-[predictedNumberOptions, minScores, scores, normalized_scores, no_matches] = matchAndPredict(digit, Ia, 0, thresh, AVG_FILTER_SIZE, BIN);
+thresh = 10;
+[predictedNumberOptions, minScores, scores, normalized_scores, no_matches] = matchAndPredict(digit, Ia, 1, thresh, AVG_FILTER_SIZE, BIN);
 
 %% Functions
 function I = cam_Capt
@@ -37,7 +37,8 @@ function I = cam_Capt
 end
 function [digit, pre, pos] = I_crop_withBound(I_bin,boundingBox)
     digit = imcrop(I_bin, boundingBox);
-    %             digits{i} = imcrop(I_binclosed, I_props(i).BoundingBox);
+    %             digits{i} = imcrop(I_binclosed,
+    %             I_props(i).BoundingBox);close
     [m,n] = size(digit);
     [max_x,i] = max([m,n]);            
     [digit, pre, pos] = pad_digit_img(digit ,ceil(max_x*1.05));
@@ -168,7 +169,6 @@ function [predictedNumberOptions, minScores, scores, normalized_scores, no_match
                 axis image off ;
             end
 
-
             if(length(score)>1)
                 median_score = median(score);
                 indi_less_median = find(score<median_score);
@@ -185,10 +185,16 @@ function [predictedNumberOptions, minScores, scores, normalized_scores, no_match
         normalized_scores(:,k) = abs((scores(:,k)-mean(scores(:,k)))./no_matches(:,k));
     end
     [minScores,predictedNumberOptions] = min(normalized_scores); 
-    counts = hist(predictedNumberOptions,1:10);
-    % result = [1:10; counts];
-    [~,pI] = max(counts);
-    % disp(['Predicted Number: ', num2str(pI-1)])
     disp(['Predicted Numbers: ', num2str(predictedNumberOptions-1)])
     disp(['with scores: ', num2str(minScores)])
+    
+    counts = hist(predictedNumberOptions,1:10);
+    if(length(find(counts>1)) == 0)
+        [~,pI] = min(minScores);
+    else
+        [~,pI] = max(counts);
+    end
+    
+    disp(['Predicted Number: ', num2str(pI-1)])
+    
 end
