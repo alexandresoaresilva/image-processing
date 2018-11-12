@@ -146,6 +146,7 @@ function [predictedNumberOptions, minScores, scores, normalized_scores, no_match
             Ib = Ib{1};
             [fb,db] = vl_sift(im2single((Ib))) ;
             [matches, score] = vl_ubcmatch(da,db,thresh);
+            nonUniques(matches,score);
 
             if(showMatches)
                 figure; clf ;
@@ -197,4 +198,47 @@ function [predictedNumberOptions, minScores, scores, normalized_scores, no_match
     
     disp(['Predicted Number: ', num2str(pI-1)])
     
+end
+
+function nonUniques(matches,scores)
+Aa = matches(1,:);
+Ab = matches(2,:);
+Bc = scores;
+
+n = length(Bc);
+while n ~= 0
+    nn = 0;
+    for ii = 1:n-1
+        if Bc(ii) > Bc(ii+1)
+            [Bc(ii+1),Bc(ii)] = deal(Bc(ii), Bc(ii+1));
+            [Aa(ii+1),Aa(ii)] = deal(Aa(ii), Aa(ii+1));
+            [Ab(ii+1),Ab(ii)] = deal(Ab(ii), Ab(ii+1));
+            nn = ii;
+        end
+    end
+    n = nn;
+end
+
+A2 = [Aa;Ab];
+B2 = Bc;
+
+A3 = [];
+B3 = [];
+k = 1;
+for j = 1:length(B2)           %Reduce to best unique matches
+    P = A2(1,j);
+    if(isempty(find(A3 == P)))
+        Q = A2(2,j);
+        idxOfUniqueMinScore = find(B2 == min(B2(round((find(A2 == Q).')/2))));
+        idxOfUniqueMinMatch = A2(2,idxOfUniqueMinScore(1));
+        if(isempty(find(A3 == Q)))
+            A3(1,k) = A2(1,j);
+            A3(2,k) = A2(2,idxOfUniqueMinScore);
+            B3(k) = B2(idxOfUniqueMinScore(1));
+            k = k + 1;
+        end
+        
+    end
+    
+end
 end
