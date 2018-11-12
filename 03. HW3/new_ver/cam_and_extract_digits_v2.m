@@ -18,12 +18,12 @@ for i=0:9
     scores_collected = [];
 
     dig = digits(i);
-    Ia_orig = dig{2};    
+    Ia_orig = dig{1};    
     % extract 120 x 120 digits normal and binarized
-    [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
+    [~, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
     Ia_bin = Ia_bin{1};
-    Ia = process_I(Ia{1});
-    
+    x_offset = size(Ia_bin,2);
+
     for j=0:9
         dig2 = digits(j);
         Ib_orig = dig2{1};
@@ -36,39 +36,20 @@ for i=0:9
         Ib_bin = process_bin_num(Ib_bin{1},2);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %% SIFT
-
-%         [fa,da] = run_SIFT(Ia,0);
-%         [fb,db] = run_SIFT(Ib, size(Ia,2));
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % --------------------------- binarized
         [fa_bin,da_bin] = run_SIFT(Ia_bin,0);
-        x_offset = size(Ia_bin,2);
         [fb_bin,db_bin] = run_SIFT(Ib_bin,x_offset);
         %%  SIFT MATCHES ///////////////////////////////////////////////////////////
-        % --------------------------- grayscale
-%         [matches_normal, scores_normal] = vl_ubcmatch(da, db,1) ;
-%         m  = median(scores_normal);
-%         std_n = std(scores_normal);
-%         s = 0; % .5*std_n;
-%         index_m = find(scores_normal < (m +std_n));
-%         selec_scores_norm = scores_normal(index_m);
-%         selec_matches_norm = matches_normal(:,index_m);
-
         % --------------------------- binarized
         [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin) ;
+        
         m_bin  = median(scores_bin);
         std_bin = std(scores_bin);
         index_m_bin = find(scores_bin < m_bin +1.5*std_bin);
         selec_scores = scores_bin(index_m_bin);
         selec_matches = matches_bin(:,index_m_bin);
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         figure
-%         subplot(121);
-%         imshow(uint8([Ia,Ib]));
-%         title('Ia X  Ib');
-%         draw_lines(da,fa,db,fb,selec_matches_norm,selec_scores_norm,x_offset);
-%         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         
-%         subplot(122);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+%       figure
 %         imshow([Ia_bin,Ib_bin]);
 %         title('Ia bin X Ib bin');
 % 
@@ -119,18 +100,15 @@ function draw_lines(da,fa,db,fb,matches,scores,x_offset)
     xb = fb(1,matches(2,:)) + x_offset;
     ya = fa(2,matches(1,:)) ;
     yb = fb(2,matches(2,:)) ;
-     
     hold on ;
     h = line([xa ; xb], [ya ; yb]) ;
     set(h,'linewidth', 1, 'color', 'b') ;
-
     vl_plotframe(fa(:,matches(1,:)));
     fb(1,:) = fb(1,:) + x_offset;
     vl_plotframe(fb(:,matches(2,:)));
     colormap gray
     axis image off ;
     hold off
-
 end
 
 function I = process_bin_num(I_bin,avg_filter_size)

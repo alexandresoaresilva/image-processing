@@ -4,9 +4,9 @@ run('VLFEATROOT/toolbox/vl_setup');
 vl_version verbose
 
 load('Templates.mat');
-load('descriptor_Templates2.mat');
-load('frame_Templates2.mat');
-load('image_Templates2.mat');
+load('descriptor_Templates.mat');
+load('frame_Templates.mat');
+load('image_Templates.mat');
 
 % imshow(I)
 AVG_FILTER_SIZE = 3;

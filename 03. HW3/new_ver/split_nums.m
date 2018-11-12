@@ -1,61 +1,98 @@
 % split
 clear, clc, close all;
 
-SIDE = 240;
-addpath('numbers');
-% addpath('VLFEATROOT');
-I = imread('0-5.JPG');
-I2 = imread('6-9.JPG');
-[d, d_bin] = extract_digits(I, 2, SIDE);
-[d2, d2_bin] = extract_digits(I2, 2, SIDE);
 
-L = length(d_bin);
-L2 = length(d2);
-digits_bin = cell(1,L +L2);
-digits = cell(1,L +L2);
-
-j = 1;
-for i=1:L
-     digits_bin{i} = d_bin{i};
-     digits{i} = d{i};
-%     d{i} = d2{j};
-    j = j + 1;
+old = cd('E:\Google Drive\02. Image Processing\hw3_database');
+[file_names2, file_names2_char] = save_file_names_in_folder(pwd,'jpg');
+load('E:\_local Home\Documents\Git\image-processing\03. HW3\new_ver\numbers\digit.mat')
+number = cell(10,1);
+numberbin = cell(10,1);
+keySet = [];
+for i=1:size(file_names2,1)
+    SIDE = 240;
+    I = imread(file_names2(i));
+    [d, dbin] = extract_digits(I, 4, SIDE);
+    keySet(i) = i - 1;
+    number{i} = d;
+    numberbin{i} = dbin;
+    L(i) = length(d);
+    Lbin(i) = length(dbin);
 end
 
-j = 1;
-L = L + 1;
-L2 = length(d2) + L-1;
+min_L = min(L);
+% dig = cell(1,min_L);
+for i=1:length(number)
+    d = digit(i-1);
+    
+    number{i} = {number{i}{1:min_L}, d{1:end}};
+    L(i) = length(number{i});
+end
 
-for i=L:L2
-    digits_bin{i} = d2_bin{j};
-    digits{i} = d2{j};
-    j = j + 1;
+min_L = min(L);
+% dig = cell(1,min_L);
+for i=1:length(number)
+    number{i} = number{i}(1:min_L);
 end
 
 
 
-index = [1 6 9 3 4 11 7 10 2 5 12 8 13 15 17 19 20 16 18 21];
-final_digits = digits(index);
-final_digits_bin = digits_bin(index);
+% min_LBin = min(Lbin);
+% % digbin = cell(1,min_Lbin);
+% for i=1:length(number)
+%     numberbin{i} ={numberbin{i}(1:min_LBin), ;
+% end
 
-sub_plots(final_digits);
-sub_plots(final_digits_bin);
 
-%11, 12 
-keySet = [0 11 12 21 22 23 31 32 41 42 43 51 52 61 62 71 72 81 82 9];
-numbers = ["zero", "one", "one", "two", "two", "two", "three", "three",...
-    "four", "four", "four", "five", "five", "six", "six", "seven",...
-     "seven", "eight", "eight", "nine"];
+digits_map = containers.Map(keySet,number);
+% digits_bin_map = containers.Map(keySet,numberbin);
 
-digits = containers.Map(keySet,final_digits);
-number_imgs{1} = digits;
-number_imgs{2} = keySet;
-number_imgs{3} = numbers;
+cd(old);
 
-digits_bin = containers.Map(keySet,final_digits_bin);
-number_imgs_bin{1} = digits_bin;
-number_imgs_bin{2} = keySet;
-number_imgs_bin{3} = numbers;
 
-save('number_imgs.mat','number_imgs');
-save('number_imgs_bin.mat','number_imgs_bin');
+for i=0:9
+    di = digits_map(i);
+    figure
+    for j=1:length(di)
+        subplot(2,5,j);
+        imshow(di{j});
+    end
+end
+% 
+% for i=0:9
+%     di = digits_bin_map(i);
+%     figure
+%     for j=1:length(di)
+%         subplot(2,5,j);
+%         imshow(di{j});
+%     end
+% end
+
+function [file_names2, file_names2_char] = save_file_names_in_folder(img_folder,extension)
+    %gets file names with the selected extension
+    current_folder = pwd; %saving so the program can return to the original  folder
+
+    cd(img_folder);
+    if extension(1) ~= '*'
+        if extension(1) ~= '.'
+            extension = char(strcat('*.',extension));
+        else
+            extension = char(strcat('*',extension));
+        end
+    end
+
+    file_names = struct2cell(dir(extension));
+    file_names2 = string.empty(0, length(file_names(1,:)) );
+
+    for i=1:size(file_names,2)%no. of columns
+        %file_name_dummy = cell2mat(file_names(1,i));
+        file_name_dummy = file_names{1,i}(1,:);
+        file_name_dummy = string(file_name_dummy);
+        if i == 1
+            file_names2 = file_name_dummy;
+        else
+            file_names2 = [file_names2; file_name_dummy];
+        end
+    end
+    file_names2_char = char(file_names2);
+    cd(current_folder);
+end

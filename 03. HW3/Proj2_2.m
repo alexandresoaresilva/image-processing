@@ -2,11 +2,12 @@ clc, clear, close all
 
 run('VLFEATROOT/toolbox/vl_setup');
 vl_version verbose
-
+addpath('new_ver');
 load('Templates.mat');
-load('descriptor_Templates2.mat');
-load('frame_Templates2.mat');
-load('image_Templates2.mat');
+load('descriptor_Templates.mat');
+load('frame_Templates.mat');
+load('image_Templates.mat');
+load('digit.mat');
 
 % imshow(I)
 AVG_FILTER_SIZE = 3;
@@ -14,7 +15,8 @@ AVG_FILTER_SIZE = 3;
 BIN = 0;
 % compare_to = 6;
 %% Pre-Process Image
-Ia_orig = cam_Capt;
+Ia_orig = digit(1);
+Ia_orig = Ia_orig{1};
 % Ib_orig = image_Templates{compare_to};
 % Ib_orig = cam_Capt;
 % Ia_orig = imread('7_4.jpg');
@@ -88,23 +90,7 @@ for i=1:length(Templates)
 %     db = Templates{i};
     [matches, score] = vl_ubcmatch(da,db,3);
     
-    k = 1;
-    for j = 1:length(scores)           %Reduce to best unique matches
-        Q = matches(2,j);
-        idxOfUniqueMinScore = find(scores == min(scores(find(matches == Q))));
-        idxOfUniqueMinMatch = matches(idxOfUniqueMinScore(1));
-
-        if(find(matches == Q) ~= NULL)
-            matches2(1,k) = matches(1,j);
-            matches2(2,k) = matches(2,idxOfUniqueMinMatch);
-            scores2(k) = scores(idxOfUniqueMinScore(1));
-            k = k + 1;
-        end
-      
-        
-    end
     
-    no_matches(i) = length(matches);
     figure; clf ;
     imagesc(cat(2, Ia, Ib)) ;
     colormap gray
@@ -132,6 +118,7 @@ for i=1:length(Templates)
 %     median_index = find()
 %     perm = perm;
 %     score  = score(perm) ;
+    no_matches(i) = length(matches);
     scores(i) = sum(drop);
     
 %     matches = matches(:, perm) ;
