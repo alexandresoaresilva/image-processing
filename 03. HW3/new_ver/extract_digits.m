@@ -1,5 +1,5 @@
 function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
-    STRUCTURING_ELEMENT_SIZE = 5;
+    STRUCTURING_ELEMENT_SIZE = 3;
     
     if length(size(I)) > 2
         I = rgb2gray(I);
@@ -13,7 +13,7 @@ function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
 %     I1 = histeq(I1)
 %     I1 = histeq(I1);
     meanGrayLevel = mean2(I1);
-    meanGrayLevel = meanGrayLevel/500;
+    meanGrayLevel = meanGrayLevel/400;
 %     if meanGrayLevel > 
     I_bin = ~imbinarize(uint8(I1),meanGrayLevel);
     for i=1:20
@@ -33,7 +33,7 @@ function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
     digits = cellmat(0);
     j = 1;
     for i=1:length(I_props)
-        if I_props(i).Area > (M*N / 330)
+        if I_props(i).Area > (M*N / 25)
 %                 rect = rectangle('Position',I_props(i).BoundingBox,...
 %                     'EdgeColor','r','LineWidth',3);
                 [digit_bin, pre, pos] = I_crop_withBound(I_bin,I_props(i).BoundingBox);

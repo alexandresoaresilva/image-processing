@@ -3,71 +3,180 @@ addpath('VLFEATROOT')
 
 run('VLFEATROOT/toolbox/vl_setup');
 addpath('numbers'); %where images/mat files are stored are stored
-
-
+load('digits_map.mat');
 
 %% paramteters
 AVG_FILTER_SIZE = 3; %for extracting digits
 DIGIT_SIZE = 120; %image size
-MOTION = 10;
-MATCH_THRESHOLD = 1.5;
-BINARIZE = 0;
+MOTION = 20;
+MATCH_THRESHOLD = 2.2;
+BINARIZE = 1;
 SHOW_MATCHES = 1;
+DIGIT_SELECTED = 0;
 
+
+% %% paramteters
+% numbers are predicted 50/50 with these parameters for alex's (using {5},{2})
+
+% AVG_FILTER_SIZE = 3; %for extracting digits
+% DIGIT_SIZE = 120; %image size
+% MOTION = 20;
+% MATCH_THRESHOLD = 2.2;
+% BINARIZE = 1;
+% SHOW_MATCHES = 1;
+% DIGIT_SELECTED = 0;
 %% Loading and pre-processing images
 %image A & B
-load('digits_map.mat');
-dig = digits_map(5);
-Ia_orig = dig{3};
-% [Ia, Ia_bin] = extract_digits(Ia_orig,AVG_FILTER_SIZE,DIGIT_SIZE);
-% 
-% if BINARIZE
-%     Ia = process_bin_num(Ia_bin{1}, 3, MOTION );
-% else
-%     Ia = Ia{1};
-% end
+accumulate = [];
+avg_Mohak = [];
+avg_Alex = [];
+for i=0:9
+    DIGIT_SELECTED = i;
+    dig = digits_map(DIGIT_SELECTED);
+    disp('                                           ');
+    disp('===========================================');
+    disp(['RUN & number: ', num2str(DIGIT_SELECTED)]);
+    disp('-------------------------------------------');
+    for j=1:8
+        Ia_orig = dig{j};
+        [predictedNumberOptions, minScores, scores, normalized_scores,...
+            no_matches, counts] = matchAndPredict(digits_map, Ia_orig, 0,...
+            MATCH_THRESHOLD, AVG_FILTER_SIZE, DIGIT_SIZE, 1);
+        %alex version
+        [most_freq_num, scores_sum,no_matches, total_matches] =...
+            match_and_predict(Ia_orig, digits_map,0, AVG_FILTER_SIZE,...
+                              MATCH_THRESHOLD, DIGIT_SIZE, BINARIZE, MOTION);
+        disp('-------------------------------------------');
+        disp(['number: ', num2str(DIGIT_SELECTED)]);
+        disp(['PREDICTED Mohak: ', num2str(predictedNumberOptions-1)]); 
+        disp(['PREDICTED Alex: ', num2str(most_freq_num)]);
+        if ((predictedNumberOptions-1) == i)
+            accumulate(j,1) = 1;
+        else
+            accumulate(j,1) = 0;
+        end
+        if (most_freq_num == i)
+            accumulate(j,2) =  1;
+        else
+            accumulate(j,2) = 0;
+        end
+    end
+    avg_Mohak(i+1) = mean(accumulate(:,1))*100;
+    avg_Alex(i+1) = mean(accumulate(:,2))*100;
+    disp('-------------------------------------------');
+    disp(['number: ', num2str(DIGIT_SELECTED)]);
+    disp(['acc. Mohak after 8 runs: ', num2str(avg_Mohak(i+1)),' %']); 
+    disp(['acc. Alex after 8 runs: ', num2str(avg_Alex(i+1)),' %']);
+end
+avg_Mohak = mean(avg_Mohak)*100;
+avg_Alex = mean(avg_Alex)*100;
+disp('-------------------------------------------');
+disp(['number: ', num2str(DIGIT_SELECTED)]);
+disp(['acc. Mohak total: ', num2str(avg_Mohak),' %']); 
+disp(['acc. Alex total: ', num2str(avg_Alex),' %']);
 
-% % figure; clf;
-% for i=0:9
-%     no_matches = [];
-%     scores_collected = [];
-%     % extract 120 x 120 digits normal and binarized
-%     %digit to compare
-%     dig2 = digits_map(i);
-%     Ib_orig = dig2{5};
-%     [Ib, Ib_bin] = extract_digits(Ib_orig, AVG_FILTER_SIZE, DIGIT_SIZE);
-%     
-%     if BINARIZE
-%         Ib = process_bin_num(Ib_bin{1}, 3, MOTION );
-%     else
-%         Ib = Ib{1};
+
+function acc = calc_accuracy(most_freq_num, predictedNumberOptions)
+    most_freq_num
+end
+
+function [predictedNumberOptions, minScores, scores, normalized_scores,...
+    no_matches, counts] = ...
+    matchAndPredict(templateImageMap, Ia, showMatches, SIFT_match_thresh,...
+                    avg_filter_size,digit_size, binarized)
+        
+    digit = templateImageMap;
+    [fa,da] = vl_sift(im2single((Ia))) ;
+    
+    for j=1:length(digit)
+        digit_no = digit(j-1);
+        
+        for i=1:length(digit_no)
+            Ib_orig = digit_no{i};
+%             [~, Ibin] = extract_digits(Ib_orig, avg_filter_size, digit_size);
+%             Ib = process_bin_num(Ib{1},2);
+            [Ib, Ibin] = extract_digits(Ib_orig, avg_filter_size, digit_size);
+            
+            if binarized
+              	Ib = process_bin_num(Ibin{1},avg_filter_size, 15);
+            else
+                Ib = Ib{1};
+            end
+            
+            [fb,db] = vl_sift(im2single((Ib))) ;
+            [matches, score] = vl_ubcmatch(da,db,SIFT_match_thresh);
+            [matches, score] = clean_features(matches, score, fa, fb);
+            if(showMatches)
+                figure; clf ;
+                plot_SIFT_lines(Ia, Ib, fa, fb, matches);
+            end
+
+      
+            %colecting the sum of scores to find the smallest among the
+            %most frequent 
+%             scores(j,i) = sum(score);
+            no_matches(j,i) = length(matches);
+            norm_scores = normalize_scores(score);
+            if no_matches(j,i) > 0
+                scores(j,i) = sum(norm_scores)/no_matches(j,i);
+            else
+                scores(j,i) = 1;
+            end
+        end
+    end
+    
+%     for k=1:size(scores,2)
+%         normalized_scores(:,k) = abs((scores(:,k)-mean(scores(:,k)))./no_matches(:,k));
 %     end
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     %% SIFT
-%     
-%     [fa_bin,da_bin] = vl_sift(single(Ia)) ;
-%     [fb_bin,db_bin] = vl_sift(single(Ib)) ;
-%     %%  SIFT MATCHES ///////////////////////////////////////////////////////////
-%     % --------------------------- binarized
-%     [matches_bin, scores_bin] = vl_ubcmatch(da_bin, db_bin, MATCH_THRESHOLD);
-%     [matches_bin, scores_bin] = remove_inf_and_nans(matches_bin, scores_bin);
-%     [matches_bin,scores_bin] = unique_matches_scores(fa_bin, 1, matches_bin,scores_bin);
-%     [selec_matches,selec_scores] = unique_matches_scores(fb_bin, 0, matches_bin, scores_bin);
-%     [selec_matches, selec_scores] = remove_outliers(selec_matches, selec_scores, 0);
-%     [selec_matches, selec_scores]  = remove_senseless_scores(selec_matches, selec_scores, fa_bin, fb_bin);
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %     subplot(2,5,i+1);
-% %     imshow([Ia_bin,Ib_bin]);
-% %     title('Ia bin X Ib bin');
-% %     plot_SIFT_lines(Ia, Ib, fa_bin, fb_bin, selec_matches);
-% end
-% [most_freq_num, scores_sum,no_matches, total_matches] = match_and_predict(Ia_orig, digits_map, SHOW_MATCHES,...
-%     AVG_FILTER_SIZE, MATCH_THRESHOLD, DIGIT_SIZE, BINARIZE ,MOTION)
+    normalized_scores = scores;
+    [minScores, predictedNumberOptions] = min(normalized_scores); 
+%     nans = isnan(minScores);
+%     minScores(nans) = inf;
+    disp(['Predicted Numbers: ', num2str(predictedNumberOptions-1)]);
+    disp(['with scores: ', num2str(minScores)]);
+    counts = hist(predictedNumberOptions,1:10);
+    measure = [];
+    [count0,indiSort] = sort(counts,'descend');
+    indiSort = indiSort-1;
+    
+    maxFreq1 = indiSort(1);
+    maxFreq2 = indiSort(2);
+    maxFreq3 = indiSort(3);
+    
+    countTemp = find(count0 ~= 0);
+    count0 = count0(countTemp);
+    
+    if(all(diff(sort(count0(count0 ~= 0)))))
+%         for k=0:9
+%     %         frequency = counts(k);
+%             indi = find(predictedNumberOptions-1 == k);
+%             if(isempty(indi))
+%                 measure(k+1) = inf;
+%             else
+%                 measure(k+1) = sum(minScores(indi))/length(indi);
+%             end
+%         end
+%         [~,pI] = min(measure);
 
-[predictedNumberOptions, minScores, scores, normalized_scores,...
-    no_matches, counts] =...
-    matchAndPredict(digits_map, Ia_orig, 0, 1.5, AVG_FILTER_SIZE, DIGIT_SIZE, 1);
+      disp(['Predicted Number: ', num2str(maxFreq1)])
+    else
+        [~,pI] = min(minScores);
+        indi = find(predictedNumberOptions-1 == maxFreq1);
+        score1 = sum(minScores(indi))/length(indi);
+        
+        
+        indi = find(predictedNumberOptions-1 == maxFreq2);
+        score2 = sum(minScores(indi))/length(indi);
 
+        indi = find(predictedNumberOptions-1 == maxFreq3);
+        score3 = sum(minScores(indi))/length(indi);
+
+
+        disp(['Score: ', num2str(maxFreq1), ' - ' num2str(score1)])
+        disp(['Score: ', num2str(maxFreq2), ' - ' num2str(score2)])
+        disp(['Score: ', num2str(maxFreq3), ' - ' num2str(score3)])
+    end
+end
 
 function [most_freq_num, scores_sum,no_matches, total_matches] =...
     match_and_predict(I, digits_map,show_matches, avg_filter_size,...
@@ -75,7 +184,7 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
     
     [Ia, Ia_bin] = extract_digits(I,avg_filter_size,digit_size);
     if binarize
-       Ia = process_bin_num(Ia_bin{1},2, motion_size);
+       Ia = process_bin_num(Ia_bin{1},avg_filter_size, motion_size);
     else
        Ia = Ia{1};
     end
@@ -86,12 +195,14 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
     %looks for the digit match
     for i=1:length(digits_map)
         test_dig = digits_map(i-1);
-        figure;
+        if show_matches
+            figure;
+        end
         for j=1:length(test_dig)
            [Ib, Ib_bin] =...
                extract_digits(test_dig{j}, avg_filter_size, digit_size);
            if binarize %process it in binary with motion blur
-               Ib = process_bin_num(Ib_bin{1},2, motion_size);
+               Ib = process_bin_num(Ib_bin{1},avg_filter_size, motion_size);
            else
                Ib = Ib{1};
            end
@@ -99,11 +210,7 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
          %% SIFT
             [fb,db] = vl_sift(single(Ib));
             [matches, scores] = vl_ubcmatch(da, db, match_thresh);
-            [matches, scores] = remove_inf_and_nans(matches, scores);
-            [matches,scores] = unique_matches_scores(fb,0, matches, scores);    
-            [matches,scores] = unique_matches_scores(fa,1,matches, scores);    
-            [matches, scores] = remove_senseless_scores(matches, scores, fa, fb);
-            [matches,scores] = keep_only_three_best_features(matches, scores);
+            [matches, scores] = clean_features(matches, scores, fa, fb);
             
             if show_matches
                 subplot(2,4,j);
@@ -117,14 +224,25 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
             else
                 scores_sum (i,j) = 1;
             end
+            
         end
         total_matches(i) = sum(no_matches(i,:));
     end
     [~,i] = min(sum(scores_sum,2));
-%     most_freq_num = i-1;
-     most_freq_num = find_match(scores_sum, total_matches);
+    most_freq_num = i-1;
+%      most_freq_num = find_match(scores_sum, total_matches);
 %     most_freq_num = find_most_frequent_digit(scores_sum);
 end
+
+function [matches, scores] = clean_features(matches, scores, fa, fb)
+    [matches, scores] = remove_inf_and_nans(matches, scores);
+    [matches, scores] = unique_matches_scores(fb,0, matches, scores);    
+    [matches, scores] = unique_matches_scores(fa,1,matches, scores);
+    [matches, scores] = remove_senseless_scores(matches, scores, fa, fb);
+    [matches, scores] = remove_outliers(matches, scores, 0);
+%     [matches, scores] = keep_only_three_best_features(matches, scores);
+end
+
 function [matches,scores] = keep_only_three_best_features(matches, scores)
     if length(scores) > 3
         [score1, i1] = min(scores);
@@ -227,109 +345,8 @@ function [matches,scores] = unique_matches_scores(fb_or_fa, is_fa, matches,score
        scores=  scores(:,ixa);
     end
 end
-function [predictedNumberOptions, minScores, scores,...
-            normalized_scores, no_matches, counts] = ...
-        matchAndPredict(templateImageMap, Ia,... %function definition
-            showMatches, SIFT_match_thresh, avg_filter_size,...
-            digit_size, binarized)
-        
-    digit = templateImageMap;
-    [fa,da] = vl_sift(im2single((Ia))) ;
-    
-    for j=1:length(digit)
-        digit_no = digit(j-1);
-        
-        for i=1:length(digit_no)
-            Ib_orig = digit_no{i};
-%             [~, Ibin] = extract_digits(Ib_orig, avg_filter_size, digit_size);
-%             Ib = process_bin_num(Ib{1},2);
-            [Ib, Ibin] = extract_digits(Ib_orig, avg_filter_size, digit_size);
-            
-            if binarized
-              	Ib = process_bin_num(Ibin{1},2, 15);
-            else
-                Ib = Ib{1};
-            end
-            
-            [fb,db] = vl_sift(im2single((Ib))) ;
-            [matches, score] = vl_ubcmatch(da,db,SIFT_match_thresh);
-%             [matches, score] = clean_inf_and_nans(matches, score);
-            [matches, score] = nonUniques(matches,score);
-%             [matches,score] = unique_matches_scores(fb, matches, score);
-%             [matches, score]  = remove_senseless_scores(matches, score, fa, fb);
-            if(showMatches)
-                figure; clf ;
-                plot_SIFT_lines(Ia, Ib, fa, fb, matches);
-            end
-
-            if(length(score)>4)
-                [matches, score] =...
-                    ignore_scores_above_median(matches, score, 0);
-            end
-            %colecting the sum of scores to find the smallest among the
-            %most frequent 
-            scores(j,i) = sum(score);
-            no_matches(j,i) = length(matches);
-        end
-    end
-    
-    for k=1:size(scores,2)
-        normalized_scores(:,k) = abs((scores(:,k)-mean(scores(:,k)))./no_matches(:,k));
-    end
-    
-    [minScores, predictedNumberOptions] = min(normalized_scores); 
-    nans = isnan(minScores);
-    minScores(nans) = inf;
-    disp(['Predicted Numbers: ', num2str(predictedNumberOptions-1)]);
-    disp(['with scores: ', num2str(minScores)]);
-    counts = hist(predictedNumberOptions,1:10);
-    measure = [];
-    [count0,indiSort] = sort(counts,'descend');
-    indiSort = indiSort-1;
-    
-    maxFreq1 = indiSort(1);
-    maxFreq2 = indiSort(2);
-    maxFreq3 = indiSort(3);
-    
-    countTemp = find(count0 ~= 0);
-    count0 = count0(countTemp);
-    
-    if(all(diff(sort(count0(count0 ~= 0)))))
-%         for k=0:9
-%     %         frequency = counts(k);
-%             indi = find(predictedNumberOptions-1 == k);
-%             if(isempty(indi))
-%                 measure(k+1) = inf;
-%             else
-%                 measure(k+1) = sum(minScores(indi))/length(indi);
-%             end
-%         end
-%         [~,pI] = min(measure);
-
-      disp(['Predicted Number: ', num2str(maxFreq1)])
-    else
-        [~,pI] = min(minScores);
-        indi = find(predictedNumberOptions-1 == maxFreq1);
-        score1 = sum(minScores(indi))/length(indi);
-        
-        
-        indi = find(predictedNumberOptions-1 == maxFreq2);
-        score2 = sum(minScores(indi))/length(indi);
-
-        indi = find(predictedNumberOptions-1 == maxFreq3);
-        score3 = sum(minScores(indi))/length(indi);
-
-
-        disp(['Score: ', num2str(maxFreq1), ' - ' num2str(score1)])
-        disp(['Score: ', num2str(maxFreq2), ' - ' num2str(score2)])
-        disp(['Score: ', num2str(maxFreq3), ' - ' num2str(score3)])
-    end
-end
-
 
 function [matches, scores] = remove_senseless_scores(matches, scores, fa, fb)
-
-
     L = length(scores);
     
     if L == 1
@@ -361,8 +378,7 @@ function [matches, scores] = remove_senseless_scores(matches, scores, fa, fb)
             scores = scores;
         end
     end
-    
-    [matches, scores] = remove_outliers(matches, scores, 0);
+
 end
 
 function [unique_maches, unique_scores] = nonUniques(matchings,scorings)
@@ -466,17 +482,16 @@ function plot_SIFT_lines(Ia, Ib, fa, fb, matches)
 end
 
 function I = process_bin_num(I_bin,avg_filter_size, motion_blur_amount)
-    LPF = avg_filt(avg_filter_size);
-    I_bin = uint8(I_bin*255);
-   I = I_bin;
-    % I1 = I;
-    I = conv2(I_bin,LPF,'valid');
-%     I = edge(I,'Canny');
-%     x = fspecial('motion',motion_blur_amount,0);
-%     y = fspecial('motion',25,90);
-%     LPF = avg_filt(5);
-%     
-%      I = conv2(I,x,'valid');
+    
+    I = uint8(I_bin*255);
+    if motion_blur_amount
+        I = edge(I,'Canny');
+        x = fspecial('motion',motion_blur_amount,0);
+        I = conv2(I,x,'valid');        
+    else
+        LPF = avg_filt(avg_filter_size);
+        I = conv2(I_bin,LPF,'valid');
+    end
 end
 
 function I = process_I(I)
