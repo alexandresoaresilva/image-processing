@@ -27,9 +27,6 @@ function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
     I_cell = {I, I1, I_bin};
     I_props = regionprops(I_bin);
 
-%     figure
-%     imshow(I_bin);
-%     hold on;
     digits = cellmat(0);
     j = 1;
     for i=1:length(I_props)

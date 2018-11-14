@@ -4,7 +4,6 @@ addpath('vlfeat-0.9.21')
 run('vlfeat-0.9.21/toolbox/vl_setup');
 addpath('numbers'); %where images/mat files are stored are stored
 load('digits_map.mat');
-
 %% paramteters
 AVG_FILTER_SIZE = 3; %for extracting digits
 DIGIT_SIZE = 120; %image size
@@ -13,6 +12,15 @@ MATCH_THRESHOLD = 2.2;
 BINARIZE = 1;
 SHOW_MATCHES = 0;
 DIGIT_SELECTED = 9;
+% most_freq_num
+
+% AVG_FILTER_SIZE = 3; %for extracting digits
+% DIGIT_SIZE = 120; %image size
+% MOTION = 24;
+% MATCH_THRESHOLD = 2.2;
+% BINARIZE = 1;
+% SHOW_MATCHES = 1;
+% DIGIT_SELECTED = 9;
 % %% paramteters
 % numbers are predicted 6/10 with these parameters for alex's (
 % using dig{8}, dig{5}, dig{2}})
@@ -22,9 +30,10 @@ DIGIT_SELECTED = 9;
 % dig{6}; 1/10
 % dig{7}; 4/10
 
+
 Ia_orig = cam_capt; 
 %alex version
-[most_freq_num, scores_sum,no_matches, total_matches] =...
+[most_freq_num, ~, ~, total_matches] =...
     match_and_predict(Ia_orig, digits_map,SHOW_MATCHES, AVG_FILTER_SIZE,...
                       MATCH_THRESHOLD, DIGIT_SIZE, BINARIZE, MOTION)
 
@@ -107,7 +116,8 @@ function [predictedNumberOptions, minScores, scores, normalized_scores,...
     digit = templateImageMap;
     [fa,da] = vl_sift(im2single((Ia))) ;
     
-    for j=1:length(digit)
+%     for j=1:length(digit)
+    for j=1:10
         digit_no = digit(j-1);
         
         for i=1:length(digit_no)
@@ -211,7 +221,8 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
     no_matches = [];
     total_matches = [];
     %looks for the digit match
-    for i=1:length(digits_map)
+%     for i=1:length(digits_map)
+    for i=1:10
         test_dig = digits_map(i-1);
         if show_matches
             figure;
@@ -246,8 +257,8 @@ function [most_freq_num, scores_sum,no_matches, total_matches] =...
         end
         total_matches(i) = sum(no_matches(i,:));
     end
-    [~,i] = min(sum(scores_sum,2));
-    most_freq_num = i-1;
+    [~,k] = min(sum(scores_sum,2));
+    most_freq_num = k-1;
 %      most_freq_num = find_match(scores_sum, total_matches);
 %     most_freq_num = find_most_frequent_digit(scores_sum);
 end
@@ -530,3 +541,98 @@ end
 function filt = avg_filt(n)
     filt = 1/(n^2)*ones(n);
 end
+
+function [digits, digits_bin] = extract_digits(I, avg_filter_size, digit_side)
+    STRUCTURING_ELEMENT_SIZE = 3;
+    
+    if length(size(I)) > 2
+        I = rgb2gray(I);
+    end
+    %% procesing
+    % I = imresize(I,[240 320]);
+    [M, N] = size(I);
+    LPF = avg_filt(avg_filter_size);
+    % I1 = I;
+    I1 = conv2(I,LPF,'valid');
+%     I1 = histeq(I1)
+%     I1 = histeq(I1);
+    meanGrayLevel = mean2(I1);
+    meanGrayLevel = meanGrayLevel/400;
+%     if meanGrayLevel > 
+    I_bin = ~imbinarize(uint8(I1),meanGrayLevel);
+    for i=1:20
+        I_bin = medfilt2(I_bin);
+    end
+    %% matlab nonuniform illumination
+    se = strel('disk', STRUCTURING_ELEMENT_SIZE);
+    I_bin = imclose(I_bin, se);
+    
+    
+    I_cell = {I, I1, I_bin};
+    I_props = regionprops(I_bin);
+
+    digits = cellmat(0);
+    j = 1;
+    for i=1:length(I_props)
+        if I_props(i).Area > (M*N / 25)
+%                 rect = rectangle('Position',I_props(i).BoundingBox,...
+%                     'EdgeColor','r','LineWidth',3);
+                [digit_bin, pre, pos] = I_crop_withBound(I_bin,I_props(i).BoundingBox);
+                
+                x_origin = I_props(i).BoundingBox(1)-pre(2);
+                y_origin = I_props(i).BoundingBox(2)-pre(1);
+                
+                x_width = I_props(i).BoundingBox(3) + pre(2)+pos(2);
+                y_width = I_props(i).BoundingBox(4) + pre(1)+pos(1);
+                BoundingBox = [x_origin,y_origin,...
+                    x_width, y_width];
+                
+%                 digitBin = imresize(digit_bin, [digit_side digit_side]);
+                digits_bin{j} = digit_bin;
+
+                digit = imresize(imcrop(I, BoundingBox), [digit_side digit_side]);
+                digits{j} = digit;
+                
+                j = j + 1;
+        end
+    end    
+end
+
+function [digit, pre, pos] = I_crop_withBound(I_bin,boundingBox)
+    digit = imcrop(I_bin, boundingBox);
+    
+    [m,n] = size(digit);
+    [max_x,i] = max([m,n]);            
+    [digit, pre, pos] = pad_digit_img(digit ,ceil(max_x*1.05));
+
+    
+    function [I, pre, pos] = pad_digit_img(I,square_side)
+        [x,y] = size(I);
+        [x_pre, x_pos] = padding_pre_post_calc(x,square_side);
+        [y_pre, y_pos] = padding_pre_post_calc(y,square_side);
+
+        pre = [x_pre y_pre];
+        pos = [x_pos y_pos];
+        I = padarray(I, pre,'pre');
+        I = padarray(I, pos,'pos');
+        
+        function [n_pre, n_pos] = padding_pre_post_calc(n,dim_size)
+            n_is_not_even = rem(dim_size-n,2);
+            n_pre = (dim_size-n)/2;
+    %         n_pre_is_not_even = rem(n_pre,2);
+
+            if n_is_not_even && n_pre %n_pre not zero
+                n_pre = n_pre - 0.5;
+                n_pos = n_pre + 1;
+            else
+                n_pos = n_pre;
+            end
+            n_pos = double(n_pos);
+            n_pre = double(n_pre);
+        end
+    end
+end
+
+% function filt = avg_filt(n)
+%     filt = 1/(n^2)*ones(n);
+% end
